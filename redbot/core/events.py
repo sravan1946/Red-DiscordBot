@@ -229,7 +229,8 @@ def init_events(bot, cli_flags):
         bot._red_ready.set()
         if outdated_red_message:
             await send_to_owners_with_prefix_replaced(bot, outdated_red_message)
-        if should_create_fork_task:
+        # if should_create_fork_task:
+        if False:
             if fork_outdated:
                 await bot.send_to_owners(
                     "Draper's Fork has been updated, changes can be seen here "
