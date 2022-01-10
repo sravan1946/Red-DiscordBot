@@ -373,4 +373,4 @@ class Dev(commands.Cog):
         if toggle:
             await ctx.send(_("Enjoy your non-cooldown session sir."))
         else:
-            await ctx.send(_("Bot owners will no longer bypass all commands with cooldowns."))
+            await ctx.send(_("Welcome back to normie gang."))
