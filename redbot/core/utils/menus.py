@@ -208,7 +208,7 @@ def start_adding_reactions(
 
 
 DEFAULT_CONTROLS = {
-    "\N{LEFTWARDS BLACK ARROW}\N{VARIATION SELECTOR-16}": prev_page,
-    "\N{CROSS MARK}": close_menu,
-    "\N{BLACK RIGHTWARDS ARROW}\N{VARIATION SELECTOR-16}": next_page,
+    "<a:left_arrow:844944139132076033>": prev_page,
+    "<:cross:844946807682891898": close_menu,
+    "<a:right_arrow:844944167666057237>": next_page,
 }
