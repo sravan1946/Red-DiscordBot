@@ -1657,6 +1657,7 @@ class Downloader(commands.Cog):
         splitted = instance.__module__.split(".")
         return splitted[0]
 
+    @commands.is_owner()
     @commands.command()
     async def findcog(self, ctx: commands.Context, command_name: str) -> None:
         """Find which cog a command comes from.
