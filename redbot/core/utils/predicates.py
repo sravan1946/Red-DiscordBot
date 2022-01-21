@@ -873,11 +873,11 @@ class ReactionPredicate(Callable[[discord.Reaction, discord.abc.User], bool]):
 
     """
 
-    YES_OR_NO_EMOJIS: ClassVar[Tuple[str, str]] = (
+    YES_OR_NO_EMOJIS: ClassVar[List[str, str]] = [
         "\N{WHITE HEAVY CHECK MARK}",
         "\N{NEGATIVE SQUARED CROSS MARK}",
-    )
-    """Tuple[str, str] : A tuple containing the tick emoji and cross emoji, in that order."""
+    ]
+    """List[str, str] : A list containing the tick emoji and cross emoji, in that order."""
 
     ALPHABET_EMOJIS: ClassVar[List[str]] = [
         chr(code)
