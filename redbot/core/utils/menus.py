@@ -157,6 +157,29 @@ async def prev_page(
         page = page - 1
     return await menu(ctx, pages, controls, message=message, page=page, timeout=timeout)
 
+async def first_page(
+    ctx: commands.Context,
+    pages: list,
+    controls: dict,
+    message: discord.Message,
+    page: int,
+    timeout: float,
+    emoji: str,
+),
+    page = 0
+    return await menu(ctx, pages, controls, message=message, page=page, timeout=timeout)
+
+async def last_page(
+    ctx: commands.Context,
+    pages: list,
+    controls: dict,
+    message: discord.Message,
+    page: int,
+    timeout: float,
+    emoji: str,
+),
+    page = len(pages) - 1
+    return await menu(ctx, pages, controls, message=message, page=page, timeout=timeout)
 
 async def close_menu(
     ctx: commands.Context,
