@@ -165,7 +165,7 @@ async def first_page(
     page: int,
     timeout: float,
     emoji: str,
-),
+):
     page = 0
     return await menu(ctx, pages, controls, message=message, page=page, timeout=timeout)
 
@@ -177,7 +177,7 @@ async def last_page(
     page: int,
     timeout: float,
     emoji: str,
-),
+):
     page = len(pages) - 1
     return await menu(ctx, pages, controls, message=message, page=page, timeout=timeout)
 
