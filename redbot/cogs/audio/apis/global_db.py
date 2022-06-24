@@ -1,6 +1,7 @@
 import asyncio
 import contextlib
 import json
+import logging
 
 from copy import copy
 from pathlib import Path
@@ -8,7 +9,6 @@ from typing import TYPE_CHECKING, Mapping, Optional, Union
 
 import aiohttp
 from lavalink.rest_api import LoadResult
-from red_commons.logging import getLogger
 
 from redbot.core import Config
 from redbot.core.bot import Red
@@ -16,13 +16,14 @@ from redbot.core.commands import Cog
 from redbot.core.i18n import Translator
 
 from ..audio_dataclasses import Query
+from ..audio_logging import IS_DEBUG, debug_exc_log
 
 if TYPE_CHECKING:
     from .. import Audio
 
 _API_URL = "https://api.redbot.app/"
 _ = Translator("Audio", Path(__file__))
-log = getLogger("red.cogs.Audio.api.GlobalDB")
+log = logging.getLogger("red.cogs.Audio.api.GlobalDB")
 
 
 class GlobalCacheWrapper:
@@ -75,17 +76,18 @@ class GlobalCacheWrapper:
                     params={"query": query},
                 ) as r:
                     search_response = await r.json(loads=json.loads)
-                    log.trace(
-                        "GET || Ping %s || Status code %s || %s",
-                        r.headers.get("x-process-time"),
-                        r.status,
-                        query,
-                    )
+                    if IS_DEBUG and "x-process-time" in r.headers:
+                        log.debug(
+                            "GET || Ping %s || Status code %d || %s",
+                            r.headers.get("x-process-time"),
+                            r.status,
+                            query,
+                        )
             if "tracks" not in search_response:
                 return {}
             return search_response
-        except Exception as exc:
-            log.trace("Failed to Get query: %s/%s", api_url, query, exc_info=exc)
+        except Exception as err:
+            debug_exc_log(log, err, "Failed to Get query: %s/%s", api_url, query)
         return {}
 
     async def get_spotify(self, title: str, author: Optional[str]) -> dict:
@@ -106,18 +108,19 @@ class GlobalCacheWrapper:
                     params=params,
                 ) as r:
                     search_response = await r.json(loads=json.loads)
-                    log.trace(
-                        "GET/spotify || Ping %s || Status code %s || %s - %s",
-                        r.headers.get("x-process-time"),
-                        r.status,
-                        title,
-                        author,
-                    )
+                    if IS_DEBUG and "x-process-time" in r.headers:
+                        log.debug(
+                            "GET/spotify || Ping %s || Status code %d || %s - %s",
+                            r.headers.get("x-process-time"),
+                            r.status,
+                            title,
+                            author,
+                        )
             if "tracks" not in search_response:
                 return {}
             return search_response
-        except Exception as exc:
-            log.trace("Failed to Get query: %s", api_url, exc_info=exc)
+        except Exception as err:
+            debug_exc_log(log, err, "Failed to Get query: %s", api_url)
         return {}
 
     async def post_call(self, llresponse: LoadResult, query: Optional[Query]) -> None:
@@ -142,14 +145,15 @@ class GlobalCacheWrapper:
                 params={"query": query},
             ) as r:
                 await r.read()
-                log.trace(
-                    "GET || Ping %s || Status code %s || %s",
-                    r.headers.get("x-process-time"),
-                    r.status,
-                    query,
-                )
-        except Exception as exc:
-            log.trace("Failed to post query: %s", query, exc_info=exc)
+                if IS_DEBUG and "x-process-time" in r.headers:
+                    log.debug(
+                        "GET || Ping %s || Status code %d || %s",
+                        r.headers.get("x-process-time"),
+                        r.status,
+                        query,
+                    )
+        except Exception as err:
+            debug_exc_log(log, err, "Failed to post query: %s", query)
         await asyncio.sleep(0)
 
     async def update_global(self, llresponse: LoadResult, query: Optional[Query] = None):

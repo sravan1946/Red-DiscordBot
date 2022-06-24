@@ -91,7 +91,7 @@ mutechannel
 
 **Description**
 
-Mute a user in the current text channel (or in the parent of the current thread).
+Mute a user in the current text channel.
 
 Examples:
 
@@ -355,7 +355,7 @@ unmutechannel
 
 **Description**
 
-Unmute a user in this channel (or in the parent of this thread).
+Unmute a user in this channel.
 
 **Arguments**
 

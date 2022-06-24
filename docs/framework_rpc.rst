@@ -20,9 +20,9 @@ Examples
 
 .. code-block:: Python
 
-    async def setup(bot):
+    def setup(bot):
         c = Cog()
-        await bot.add_cog(c)
+        bot.add_cog(c)
         bot.register_rpc_handler(c.rpc_method)
 
 *******************************

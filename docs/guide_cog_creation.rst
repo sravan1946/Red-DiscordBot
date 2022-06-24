@@ -102,8 +102,8 @@ Open :code:`__init__.py`. In that file, place the following:
     from .mycog import MyCog
 
 
-    async def setup(bot):
-        await bot.add_cog(MyCog(bot))
+    def setup(bot):
+        bot.add_cog(MyCog(bot))
 
 Make sure that both files are saved.
 

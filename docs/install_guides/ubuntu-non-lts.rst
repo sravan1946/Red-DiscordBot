@@ -4,8 +4,6 @@
 Installing Red on Ubuntu non-LTS versions
 =========================================
 
-.. include:: _includes/supported-arch-x64+aarch64.rst
-
 .. include:: _includes/linux-preamble.rst
 
 -------------------------------

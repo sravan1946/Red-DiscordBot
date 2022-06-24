@@ -3,6 +3,7 @@ import re
 import random
 from datetime import datetime, timedelta
 from inspect import Parameter
+from collections import OrderedDict
 from typing import Iterable, List, Mapping, Tuple, Dict, Set, Literal, Union
 from urllib.parse import quote_plus
 
@@ -58,6 +59,7 @@ class CommandObj:
         return {k: v for k, v in _commands.items() if _commands[k]}
 
     async def redact_author_ids(self, user_id: int):
+
         all_guilds = await self.config.all_guilds()
 
         for guild_id in all_guilds.keys():
@@ -309,7 +311,7 @@ class CustomCommands(commands.Cog):
                     if len(msg) > 2000:
                         msg = f"{msg[:1997]}..."
                     msglist.append(msg)
-            await menus.menu(ctx, msglist)
+            await menus.menu(ctx, msglist, menus.DEFAULT_CONTROLS)
 
     @customcom.command(name="search")
     @commands.guild_only()
@@ -539,7 +541,7 @@ class CustomCommands(commands.Cog):
             )
 
     @customcom.command(name="list")
-    @commands.bot_can_react()
+    @checks.bot_has_permissions(add_reactions=True)
     async def cc_list(self, ctx: commands.Context):
         """List all available custom commands.
 
@@ -572,11 +574,11 @@ class CustomCommands(commands.Cog):
                 )
                 embed.set_footer(text=_("Page {num}/{total}").format(num=idx, total=len(pages)))
                 embed_pages.append(embed)
-            await menus.menu(ctx, embed_pages)
+            await menus.menu(ctx, embed_pages, menus.DEFAULT_CONTROLS)
         else:
             content = "\n".join(map("{0[0]:<12} : {0[1]}".format, results))
             pages = list(map(box, pagify(content, page_length=2000, shorten_by=10)))
-            await menus.menu(ctx, pages)
+            await menus.menu(ctx, pages, menus.DEFAULT_CONTROLS)
 
     @customcom.command(name="show")
     async def cc_show(self, ctx, command_name: str):
@@ -635,14 +637,11 @@ class CustomCommands(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_without_command(self, message):
-        is_private = message.guild is None
+        is_private = isinstance(message.channel, discord.abc.PrivateChannel)
 
         # user_allowed check, will be replaced with self.bot.user_allowed or
         # something similar once it's added
         user_allowed = True
-
-        if isinstance(message.channel, discord.PartialMessageable):
-            return
 
         if len(message.content) < 2 or is_private or not user_allowed or message.author.bot:
             return
@@ -707,8 +706,9 @@ class CustomCommands(commands.Cog):
     @staticmethod
     def prepare_args(raw_response) -> Mapping[str, Parameter]:
         args = re.findall(r"{(\d+)[^:}]*(:[^.}]*)?[^}]*\}", raw_response)
+        default = [("ctx", Parameter("ctx", Parameter.POSITIONAL_OR_KEYWORD))]
         if not args:
-            return {}
+            return OrderedDict(default)
         allowed_builtins = {
             "bool": bool,
             "complex": complex,
@@ -776,7 +776,9 @@ class CustomCommands(commands.Cog):
                 i if i < high else "final",
             )
             fin[i] = fin[i].replace(name=name)
-        return dict((p.name, p) for p in fin)
+        # insert ctx parameter for discord.py parsing
+        fin = default + [(p.name, p) for p in fin]
+        return OrderedDict(fin)
 
     def test_cooldowns(self, ctx, command, cooldowns):
         now = datetime.utcnow()

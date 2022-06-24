@@ -1007,14 +1007,14 @@ class Config(metaclass=ConfigMeta):
             )
         return self._get_base_group(self.CHANNEL, str(channel_id))
 
-    def channel(self, channel: Union[discord.abc.GuildChannel, discord.Thread]) -> Group:
+    def channel(self, channel: discord.abc.GuildChannel) -> Group:
         """Returns a `Group` for the given channel.
 
         This does not discriminate between text and voice channels.
 
         Parameters
         ----------
-        channel : `discord.abc.GuildChannel` or `discord.Thread`
+        channel : `discord.abc.GuildChannel`
             A channel object.
 
         Returns

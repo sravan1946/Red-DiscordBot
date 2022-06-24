@@ -35,7 +35,8 @@ Basic Usage
 Registering Case types
 **********************
 
-To register case types, use a special ``cog_load()`` method which is called when you add a cog:
+To register case types, use an asynchronous ``initialize()`` method and call
+it from your setup function:
 
 .. code-block:: python
 
@@ -45,7 +46,7 @@ To register case types, use a special ``cog_load()`` method which is called when
 
     class MyCog(commands.Cog):
 
-        async def cog_load(self):
+        async def initialize(self):
             await self.register_casetypes()
 
         @staticmethod
@@ -86,7 +87,8 @@ To register case types, use a special ``cog_load()`` method which is called when
 
     async def setup(bot):
         cog = MyCog()
-        await bot.add_cog(cog)
+        await cog.initialize()
+        bot.add_cog(cog)
 
 .. important::
     Image should be the emoji you want to represent your case type with.

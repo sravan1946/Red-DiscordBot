@@ -7,8 +7,6 @@ from typing import Optional
 import discord
 from discord import __version__ as discord_version
 
-from redbot.core.utils._internal_utils import cli_level_to_log_level
-
 
 def confirm(text: str, default: Optional[bool] = None) -> bool:
     if default is None:
@@ -188,13 +186,12 @@ def parse_cli_flags(args):
         "process.",
     )
     parser.add_argument(
-        "-v",
-        "--verbose",
         "--debug",
-        action="count",
-        default=0,
+        action="store_const",
         dest="logging_level",
-        help="Increase the verbosity of the logs, each usage of this flag increases the verbosity level by 1.",
+        const=logging.DEBUG,
+        default=logging.INFO,
+        help="Sets the loggers level as debug",
     )
     parser.add_argument("--dev", action="store_true", help="Enables developer mode")
     parser.add_argument(
@@ -294,6 +291,5 @@ def parse_cli_flags(args):
         args.prefix = sorted(args.prefix, reverse=True)
     else:
         args.prefix = []
-    args.logging_level = cli_level_to_log_level(args.logging_level)
 
     return args

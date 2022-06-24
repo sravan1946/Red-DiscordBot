@@ -1,11 +1,10 @@
 """Package for Trivia cog."""
-from redbot.core.bot import Red
-
 from .trivia import *
 from .session import *
 from .log import *
 
 
-async def setup(bot: Red) -> None:
+def setup(bot):
     """Load Trivia."""
-    await bot.add_cog(Trivia(bot))
+    cog = Trivia()
+    bot.add_cog(cog)

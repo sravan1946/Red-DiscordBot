@@ -4,8 +4,6 @@
 Installing Red on macOS
 =======================
 
-.. include:: _includes/supported-arch-x64+aarch64.rst
-
 -------------------------------
 Installing the pre-requirements
 -------------------------------
@@ -25,8 +23,7 @@ one-by-one:
 
     brew install python@3.9
     brew install git
-    brew tap homebrew/cask-versions
-    brew install --cask temurin11
+    brew install --cask adoptopenjdk/openjdk/adoptopenjdk11
 
 By default, Python installed through Homebrew is not added to the load path.
 To fix this, you should run these commands:

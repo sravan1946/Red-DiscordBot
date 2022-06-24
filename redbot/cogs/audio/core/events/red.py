@@ -1,15 +1,14 @@
 import asyncio
+import logging
 from pathlib import Path
 from typing import Literal, Mapping
-
-from red_commons.logging import getLogger
 
 from redbot.core import commands
 from redbot.core.i18n import Translator
 from ..abc import MixinMeta
 from ..cog_utils import CompositeMetaClass
 
-log = getLogger("red.cogs.Audio.cog.Events.red")
+log = logging.getLogger("red.cogs.Audio.cog.Events.red")
 _ = Translator("Audio", Path(__file__))
 
 
@@ -31,6 +30,7 @@ class RedEvents(MixinMeta, metaclass=CompositeMetaClass):
         requester: Literal["discord_deleted_user", "owner", "user", "user_strict"],
         user_id: int,
     ):
+
         await self.cog_ready_event.wait()
 
         if requester in ("discord_deleted_user", "owner"):

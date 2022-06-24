@@ -19,7 +19,7 @@ from redbot.core.commands import UserInputOptional
 from redbot.core.i18n import Translator, cog_i18n
 from redbot.core.utils import AsyncIter
 from redbot.core.utils.chat_formatting import warning, pagify
-from redbot.core.utils.menus import menu
+from redbot.core.utils.menus import menu, DEFAULT_CONTROLS
 
 
 _ = Translator("Warnings", __file__)
@@ -47,9 +47,7 @@ class Warnings(commands.Cog):
         self.config.register_guild(**self.default_guild)
         self.config.register_member(**self.default_member)
         self.bot = bot
-
-    async def cog_load(self) -> None:
-        await self.register_warningtype()
+        self.registration_task = self.bot.loop.create_task(self.register_warningtype())
 
     async def red_delete_data_for_user(
         self,
@@ -324,7 +322,7 @@ class Warnings(commands.Cog):
                         ).format(reason_name=r, **v)
                     )
         if msg_list:
-            await menu(ctx, msg_list)
+            await menu(ctx, msg_list, DEFAULT_CONTROLS)
         else:
             await ctx.send(_("There are no reasons configured!"))
 
@@ -359,7 +357,7 @@ class Warnings(commands.Cog):
                         ).format(**r)
                     )
         if msg_list:
-            await menu(ctx, msg_list)
+            await menu(ctx, msg_list, DEFAULT_CONTROLS)
         else:
             await ctx.send(_("There are no actions configured!"))
 
@@ -510,7 +508,7 @@ class Warnings(commands.Cog):
         await modlog.create_case(
             self.bot,
             ctx.guild,
-            ctx.message.created_at,
+            ctx.message.created_at.replace(tzinfo=timezone.utc),
             "warning",
             member,
             ctx.message.author,
@@ -634,7 +632,7 @@ class Warnings(commands.Cog):
         await modlog.create_case(
             self.bot,
             ctx.guild,
-            ctx.message.created_at,
+            ctx.message.created_at.replace(tzinfo=timezone.utc),
             "unwarned",
             member,
             ctx.message.author,

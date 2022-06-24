@@ -4,8 +4,6 @@
 Installing Red on CentOS 7
 ==========================
 
-.. include:: _includes/supported-arch-x64+aarch64.rst
-
 .. include:: _includes/linux-preamble.rst
 
 -------------------------------
@@ -33,7 +31,7 @@ In order to install Git 2.11 or greater, we recommend adding the IUS repository:
 .. prompt:: bash
 
     sudo yum -y install https://repo.ius.io/ius-release-el7.rpm
-    sudo yum -y swap git git236
+    sudo yum -y swap git git224
 
 .. Include common instructions:
 

@@ -5,7 +5,6 @@ from datetime import timedelta
 
 from discord.ext.commands.converter import Converter
 from redbot.core import commands
-from redbot.core import i18n
 
 log = logging.getLogger("red.cogs.mutes")
 
@@ -26,8 +25,6 @@ TIME_RE_STRING = r"|".join(
 )
 TIME_RE = re.compile(TIME_RE_STRING, re.I)
 TIME_SPLIT = re.compile(r"t(?:ime)?=")
-
-_ = i18n.Translator("Mutes", __file__)
 
 
 class MuteTime(Converter):
@@ -53,11 +50,6 @@ class MuteTime(Converter):
                 if v:
                     time_data[k] = int(v)
         if time_data:
-            try:
-                result["duration"] = timedelta(**time_data)
-            except OverflowError:
-                raise commands.BadArgument(
-                    _("The time provided is too long; use a more reasonable time.")
-                )
+            result["duration"] = timedelta(**time_data)
         result["reason"] = argument.strip()
         return result

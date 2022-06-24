@@ -7,7 +7,7 @@ import redbot
 
 
 if int(os.environ.get("JUST_RETURN_VERSION", 0)):
-    print(f"::set-output name=version::{redbot._VERSION}")
+    print(f"::set-output name=version::{redbot.__version__}")
     sys.exit(0)
 
 
@@ -30,12 +30,12 @@ def repl(match: Match[str]) -> str:
         version_info.micro += 1
         version_info.dev_release = 1
 
-    return f'_VERSION = "{version_info}"'
+    return f'__version__ = "{version_info}"'
 
 
 with open("redbot/__init__.py", encoding="utf-8") as fp:
     new_contents, found = re.subn(
-        pattern=r'^_VERSION = "(?P<version>[^"]*)"$',
+        pattern=r'^__version__ = "(?P<version>[^"]*)"$',
         repl=repl,
         string=fp.read(),
         count=1,
@@ -43,7 +43,7 @@ with open("redbot/__init__.py", encoding="utf-8") as fp:
     )
 
 if not found:
-    print("Couldn't find `_VERSION` line!")
+    print("Couldn't find `__version__` line!")
     sys.exit(1)
 
 with open("redbot/__init__.py", "w", encoding="utf-8", newline="\n") as fp:

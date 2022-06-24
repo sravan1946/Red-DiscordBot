@@ -9,9 +9,7 @@ if TYPE_CHECKING:
     from ..commands import Context
 
 
-async def mass_purge(
-    messages: List[discord.Message], channel: Union[discord.TextChannel, discord.Thread]
-):
+async def mass_purge(messages: List[discord.Message], channel: discord.TextChannel):
     """Bulk delete messages from a channel.
 
     If more than 100 messages are supplied, the bot will delete 100 messages at
@@ -26,7 +24,7 @@ async def mass_purge(
     ----------
     messages : `list` of `discord.Message`
         The messages to bulk delete.
-    channel : `discord.TextChannel` or `discord.Thread`
+    channel : discord.TextChannel
         The channel to delete messages from.
 
     Raises

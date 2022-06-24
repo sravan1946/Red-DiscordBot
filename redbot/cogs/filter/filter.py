@@ -56,7 +56,7 @@ class Filter(commands.Cog):
             if user_id in guild_data:
                 await self.config.member_from_ids(guild_id, user_id).clear()
 
-    async def cog_load(self) -> None:
+    async def initialize(self) -> None:
         await self.register_casetypes()
 
     @staticmethod
@@ -205,14 +205,6 @@ class Filter(commands.Cog):
     async def _channel_clear(self, ctx: commands.Context):
         """Clears this channel's filter list."""
         channel = ctx.channel
-        if isinstance(channel, discord.Thread):
-            await ctx.send(
-                _(
-                    "Threads can't have a filter list set up. If you want to clear this list for"
-                    " the parent channel, send the command in that channel."
-                )
-            )
-            return
         author = ctx.author
         filter_list = await self.config.channel(channel).filter()
         if not filter_list:
@@ -236,7 +228,7 @@ class Filter(commands.Cog):
     @_filter_channel.command(name="list")
     async def _channel_list(self, ctx: commands.Context):
         """Send a list of the channel's filtered words."""
-        channel = ctx.channel.parent if isinstance(ctx.channel, discord.Thread) else ctx.channel
+        channel = ctx.channel
         author = ctx.author
         word_list = await self.config.channel(channel).filter()
         if not word_list:
@@ -265,14 +257,6 @@ class Filter(commands.Cog):
         - `[words...]` The words or sentences to filter.
         """
         channel = ctx.channel
-        if isinstance(channel, discord.Thread):
-            await ctx.send(
-                _(
-                    "Threads can't have a filter list set up. If you want to add words to"
-                    " the list of the parent channel, send the command in that channel."
-                )
-            )
-            return
         added = await self.add_to_filter(channel, words)
         if added:
             self.invalidate_cache(ctx.guild, ctx.channel)
@@ -295,14 +279,6 @@ class Filter(commands.Cog):
         - `[words...]` The words or sentences to no longer filter.
         """
         channel = ctx.channel
-        if isinstance(channel, discord.Thread):
-            await ctx.send(
-                _(
-                    "Threads can't have a filter list set up. If you want to remove words from"
-                    " the list of the parent channel, send the command in that channel."
-                )
-            )
-            return
         removed = await self.remove_from_filter(channel, words)
         if removed:
             await ctx.send(_("Words removed from filter."))
@@ -373,7 +349,7 @@ class Filter(commands.Cog):
     def invalidate_cache(
         self, guild: discord.Guild, channel: Optional[discord.TextChannel] = None
     ) -> None:
-        """Invalidate a cached pattern"""
+        """ Invalidate a cached pattern"""
         self.pattern_cache.pop((guild.id, channel and channel.id), None)
         if channel is None:
             for keyset in list(self.pattern_cache.keys()):  # cast needed, no remove
@@ -421,19 +397,15 @@ class Filter(commands.Cog):
         return removed
 
     async def filter_hits(
-        self,
-        text: str,
-        server_or_channel: Union[discord.Guild, discord.TextChannel, discord.Thread],
+        self, text: str, server_or_channel: Union[discord.Guild, discord.TextChannel]
     ) -> Set[str]:
-        if isinstance(server_or_channel, discord.Guild):
+
+        try:
+            guild = server_or_channel.guild
+            channel = server_or_channel
+        except AttributeError:
             guild = server_or_channel
             channel = None
-        else:
-            guild = server_or_channel.guild
-            if isinstance(server_or_channel, discord.Thread):
-                channel = server_or_channel.parent
-            else:
-                channel = server_or_channel
 
         hits: Set[str] = set()
 
@@ -466,7 +438,7 @@ class Filter(commands.Cog):
         filter_time = guild_data["filterban_time"]
         user_count = member_data["filter_count"]
         next_reset_time = member_data["next_reset_time"]
-        created_at = message.created_at
+        created_at = message.created_at.replace(tzinfo=timezone.utc)
 
         if filter_count > 0 and filter_time > 0:
             if created_at.timestamp() >= next_reset_time:
@@ -480,16 +452,10 @@ class Filter(commands.Cog):
         hits = await self.filter_hits(message.content, message.channel)
 
         if hits:
-            # modlog doesn't accept PartialMessageable
-            channel = (
-                None
-                if isinstance(message.channel, discord.PartialMessageable)
-                else message.channel
-            )
             await modlog.create_case(
                 bot=self.bot,
                 guild=guild,
-                created_at=created_at,
+                created_at=message.created_at.replace(tzinfo=timezone.utc),
                 action_type="filterhit",
                 user=author,
                 moderator=guild.me,
@@ -498,7 +464,7 @@ class Filter(commands.Cog):
                     if len(hits) > 1
                     else _("Filtered word used: {word}").format(word=list(hits)[0])
                 ),
-                channel=channel,
+                channel=message.channel,
             )
             try:
                 await message.delete()
@@ -520,7 +486,7 @@ class Filter(commands.Cog):
                             await modlog.create_case(
                                 self.bot,
                                 guild,
-                                message.created_at,
+                                message.created_at.replace(tzinfo=timezone.utc),
                                 "filterban",
                                 author,
                                 guild.me,
@@ -563,6 +529,7 @@ class Filter(commands.Cog):
         await self.maybe_filter_name(member)
 
     async def maybe_filter_name(self, member: discord.Member):
+
         guild = member.guild
         if (not guild) or await self.bot.cog_disabled_in_guild(self, guild):
             return

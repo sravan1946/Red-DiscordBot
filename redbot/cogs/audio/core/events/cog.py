@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import logging
 import time
 from pathlib import Path
 
@@ -7,17 +8,17 @@ from typing import Optional
 
 import discord
 import lavalink
-from red_commons.logging import getLogger
 
 from redbot.core import commands
 from redbot.core.i18n import Translator
 
 from ...apis.playlist_interface import Playlist, delete_playlist, get_playlist
+from ...audio_logging import debug_exc_log
 from ...utils import PlaylistScope
 from ..abc import MixinMeta
 from ..cog_utils import CompositeMetaClass
 
-log = getLogger("red.cogs.Audio.cog.Events.audio")
+log = logging.getLogger("red.cogs.Audio.cog.Events.audio")
 _ = Translator("Audio", Path(__file__))
 
 
@@ -122,8 +123,8 @@ class AudioEvents(MixinMeta, metaclass=CompositeMetaClass):
                     playlist_api=self.playlist_api,
                     bot=self.bot,
                 )
-            except Exception as exc:
-                log.verbose("Failed to delete daily playlist ID: %s", too_old_id, exc_info=exc)
+            except Exception as err:
+                debug_exc_log(log, err, "Failed to delete daily playlist ID: %d", too_old_id)
             try:
                 await delete_playlist(
                     scope=PlaylistScope.GLOBAL.value,
@@ -133,9 +134,9 @@ class AudioEvents(MixinMeta, metaclass=CompositeMetaClass):
                     playlist_api=self.playlist_api,
                     bot=self.bot,
                 )
-            except Exception as exc:
-                log.verbose(
-                    "Failed to delete global daily playlist ID: %s", too_old_id, exc_info=exc
+            except Exception as err:
+                debug_exc_log(
+                    log, err, "Failed to delete global daily playlist ID: %d", too_old_id
                 )
         persist_cache = self._persist_queue_cache.setdefault(
             guild.id, await self.config.guild(guild).persist_queue()
@@ -195,9 +196,7 @@ class AudioEvents(MixinMeta, metaclass=CompositeMetaClass):
         requester: discord.Member,
         player: lavalink.Player,
     ):
-        if not guild:
-            return
-        notify_channel = guild.get_channel_or_thread(player.fetch("notify_channel"))
+        notify_channel = self.bot.get_channel(player.fetch("notify_channel"))
         has_perms = self._has_notify_perms(notify_channel)
         tries = 0
         while not player._is_playing:
@@ -208,7 +207,7 @@ class AudioEvents(MixinMeta, metaclass=CompositeMetaClass):
 
         if notify_channel and has_perms and not player.fetch("autoplay_notified", False):
             if (
-                len(player.node.players) < 10
+                len(player.manager.players) < 10
                 or not player._last_resume
                 and player._last_resume + datetime.timedelta(seconds=60)
                 > datetime.datetime.now(tz=datetime.timezone.utc)

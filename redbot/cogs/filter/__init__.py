@@ -3,4 +3,6 @@ from redbot.core.bot import Red
 
 
 async def setup(bot: Red) -> None:
-    await bot.add_cog(Filter(bot))
+    cog = Filter(bot)
+    await cog.initialize()
+    bot.add_cog(cog)

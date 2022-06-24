@@ -18,8 +18,7 @@ import pip
 import traceback
 from pathlib import Path
 from redbot.core import data_manager
-from redbot.core.utils.menus import menu
-from redbot.core.utils.views import SetApiView
+from redbot.core.utils.menus import menu, DEFAULT_CONTROLS
 from redbot.core.commands import GuildConverter, RawUserIdConverter
 from string import ascii_letters, digits
 from typing import TYPE_CHECKING, Union, Tuple, List, Optional, Iterable, Sequence, Dict, Set
@@ -40,7 +39,7 @@ from . import (
     modlog,
 )
 from ._diagnoser import IssueDiagnoser
-from .utils import AsyncIter, can_user_send_messages_in
+from .utils import AsyncIter
 from .utils._internal_utils import fetch_latest_red_version_info
 from .utils.predicates import MessagePredicate
 from .utils.chat_formatting import (
@@ -276,7 +275,7 @@ class CoreLogic:
 
         for name in pkg_names:
             if name in bot.extensions:
-                await bot.unload_extension(name)
+                bot.unload_extension(name)
                 await bot.remove_loaded_package(name)
                 unloaded_packages.append(name)
             else:
@@ -319,7 +318,7 @@ class CoreLogic:
             The current (or new) username of the bot.
         """
         if name is not None:
-            return (await self.bot.user.edit(username=name)).name
+            await self.bot.user.edit(username=name)
 
         return self.bot.user.name
 
@@ -535,8 +534,8 @@ class Core(commands.commands._RuleDropper, commands.Cog, CoreLogic):
         uptime = self.bot.uptime.replace(tzinfo=datetime.timezone.utc)
         uptime_str = humanize_timedelta(timedelta=delta) or _("Less than one second.")
         await ctx.send(
-            _("I have been up for: **{time_quantity}** (since {timestamp})").format(
-                time_quantity=uptime_str, timestamp=discord.utils.format_dt(uptime, "f")
+            _("Been up for: **{time_quantity}** (since {timestamp})").format(
+                time_quantity=uptime_str, timestamp=f"<t:{int(uptime.timestamp())}:f>"
             )
         )
 
@@ -646,6 +645,7 @@ class Core(commands.commands._RuleDropper, commands.Cog, CoreLogic):
         )
 
     async def get_serious_confirmation(self, ctx: commands.Context, prompt: str) -> bool:
+
         confirm_token = "".join(random.choices((*ascii_letters, *digits), k=8))
 
         await ctx.send(f"{prompt}\n\n{confirm_token}")
@@ -1367,15 +1367,6 @@ class Core(commands.commands._RuleDropper, commands.Cog, CoreLogic):
         **Arguments:**
             - `[enabled]` - Whether to use embeds in this channel. Leave blank to reset to default.
         """
-        if isinstance(ctx.channel, discord.Thread):
-            await ctx.send(
-                _(
-                    "This setting cannot be set for threads. If you want to set this for"
-                    " the parent channel, send the command in that channel."
-                )
-            )
-            return
-
         if enabled is None:
             await self.bot._config.channel(ctx.channel).embeds.clear()
             await ctx.send(_("Embeds will now fall back to the global setting."))
@@ -1653,16 +1644,14 @@ class Core(commands.commands._RuleDropper, commands.Cog, CoreLogic):
         Note: This command is interactive.
         """
         guilds = sorted(self.bot.guilds, key=lambda s: s.name.lower())
-        msg = "\n".join(
-            f"{discord.utils.escape_markdown(guild.name)} (`{guild.id}`)\n" for guild in guilds
-        )
+        msg = "\n".join(f"{guild.name} (`{guild.id}`)\n" for guild in guilds)
 
         pages = list(pagify(msg, ["\n"], page_length=1000))
 
         if len(pages) == 1:
             await ctx.send(pages[0])
         else:
-            await menu(ctx, pages)
+            await menu(ctx, pages, DEFAULT_CONTROLS)
 
     @commands.command(require_var_positional=True)
     @checks.is_owner()
@@ -2415,7 +2404,7 @@ class Core(commands.commands._RuleDropper, commands.Cog, CoreLogic):
                     "must be a valid image in either JPG or PNG format."
                 )
             )
-        except ValueError:
+        except discord.InvalidArgument:
             await ctx.send(_("JPG / PNG format only."))
         else:
             await ctx.send(_("Done."))
@@ -3094,19 +3083,11 @@ class Core(commands.commands._RuleDropper, commands.Cog, CoreLogic):
 
     @_set.group(name="api", invoke_without_command=True)
     @checks.is_owner()
-    async def _set_api(
-        self,
-        ctx: commands.Context,
-        service: Optional[str] = None,
-        *,
-        tokens: Optional[TokenConverter] = None,
-    ):
+    async def _set_api(self, ctx: commands.Context, service: str, *, tokens: TokenConverter):
         """
         Commands to set, list or remove various external API tokens.
 
         This setting will be asked for by some 3rd party cogs and some core cogs.
-
-        If passed without the `<service>` or `<tokens>` arguments it will allow you to open a modal to set your API keys securely.
 
         To add the keys provide the service name and the tokens as a comma separated
         list of key,values as described by the cog requesting this command.
@@ -3114,8 +3095,6 @@ class Core(commands.commands._RuleDropper, commands.Cog, CoreLogic):
         Note: API tokens are sensitive, so this command should only be used in a private channel or in DM with the bot.
 
         **Examples:**
-            - `[p]set api`
-            - `[p]set api spotify
             - `[p]set api spotify redirect_uri localhost`
             - `[p]set api github client_id,whoops client_secret,whoops`
 
@@ -3123,18 +3102,10 @@ class Core(commands.commands._RuleDropper, commands.Cog, CoreLogic):
             - `<service>` - The service you're adding tokens to.
             - `<tokens>` - Pairs of token keys and values. The key and value should be separated by one of ` `, `,`, or `;`.
         """
-        if service is None:  # Handled in order of missing operations
-            await ctx.send(_("Click the button below to set your keys."), view=SetApiView())
-        elif tokens is None:
-            await ctx.send(
-                _("Click the button below to set your keys."),
-                view=SetApiView(default_service=service),
-            )
-        else:
-            if ctx.channel.permissions_for(ctx.me).manage_messages:
-                await ctx.message.delete()
-            await ctx.bot.set_shared_api_tokens(service, **tokens)
-            await ctx.send(_("`{service}` API tokens have been set.").format(service=service))
+        if ctx.channel.permissions_for(ctx.me).manage_messages:
+            await ctx.message.delete()
+        await ctx.bot.set_shared_api_tokens(service, **tokens)
+        await ctx.send(_("`{service}` API tokens have been set.").format(service=service))
 
     @_set_api.command(name="list")
     async def _set_api_list(self, ctx: commands.Context):
@@ -3241,7 +3212,7 @@ class Core(commands.commands._RuleDropper, commands.Cog, CoreLogic):
 
     @_set_ownernotifications.command(name="adddestination")
     async def _set_ownernotifications_adddestination(
-        self, ctx: commands.Context, *, channel: discord.TextChannel
+        self, ctx: commands.Context, *, channel: Union[discord.TextChannel, int]
     ):
         """
         Adds a destination text channel to receive owner notifications.
@@ -3253,9 +3224,15 @@ class Core(commands.commands._RuleDropper, commands.Cog, CoreLogic):
         **Arguments:**
             - `<channel>` - The channel to send owner notifications to.
         """
+
+        try:
+            channel_id = channel.id
+        except AttributeError:
+            channel_id = channel
+
         async with ctx.bot._config.extra_owner_destinations() as extras:
-            if channel.id not in extras:
-                extras.append(channel.id)
+            if channel_id not in extras:
+                extras.append(channel_id)
 
         await ctx.tick()
 
@@ -3998,16 +3975,39 @@ class Core(commands.commands._RuleDropper, commands.Cog, CoreLogic):
         successful = False
 
         for destination in destinations:
-            is_dm = isinstance(destination, discord.User)
-            if not is_dm and not destination.permissions_for(destination.guild.me).send_messages:
-                continue
 
-            if await ctx.bot.embed_requested(destination, command=ctx.command):
-                color = await ctx.bot.get_embed_color(destination)
+            is_dm = isinstance(destination, discord.User)
+            send_embed = None
+
+            if is_dm:
+                send_embed = await ctx.bot._config.user(destination).embeds()
+            else:
+                if not destination.permissions_for(destination.guild.me).send_messages:
+                    continue
+                if destination.permissions_for(destination.guild.me).embed_links:
+                    send_embed = await ctx.bot._config.channel(destination).embeds()
+                    if send_embed is None:
+                        send_embed = await ctx.bot._config.guild(destination.guild).embeds()
+                else:
+                    send_embed = False
+
+            if send_embed is None:
+                send_embed = await ctx.bot._config.embeds()
+
+            if send_embed:
+
+                if not is_dm:
+                    color = await ctx.bot.get_embed_color(destination)
+                else:
+                    color = ctx.bot._color
 
                 e = discord.Embed(colour=color, description=message)
-                e.set_author(name=description, icon_url=author.display_avatar)
-                e.set_footer(text=f"{footer}\n{content}")
+                if author.avatar_url:
+                    e.set_author(name=description, icon_url=author.avatar_url)
+                else:
+                    e.set_author(name=description)
+
+                e.set_footer(text=footer)
 
                 try:
                     await destination.send(embed=e)
@@ -4021,7 +4021,9 @@ class Core(commands.commands._RuleDropper, commands.Cog, CoreLogic):
                     )
                 else:
                     successful = True
+
             else:
+
                 msg_text = "{}\nMessage:\n\n{}\n{}".format(description, message, footer)
 
                 try:
@@ -4077,7 +4079,10 @@ class Core(commands.commands._RuleDropper, commands.Cog, CoreLogic):
             e = discord.Embed(colour=discord.Colour.red(), description=message)
 
             e.set_footer(text=content)
-            e.set_author(name=description, icon_url=ctx.bot.user.display_avatar)
+            if ctx.bot.user.avatar_url:
+                e.set_author(name=description, icon_url=ctx.bot.user.avatar_url)
+            else:
+                e.set_author(name=description)
 
             try:
                 await destination.send(embed=e)
@@ -4112,9 +4117,106 @@ class Core(commands.commands._RuleDropper, commands.Cog, CoreLogic):
     @checks.is_owner()
     async def debuginfo(self, ctx: commands.Context):
         """Shows debug information useful for debugging."""
-        from redbot.core._debuginfo import DebugInfo
 
-        await ctx.send(await DebugInfo(self.bot).get_text())
+        if sys.platform == "linux":
+            import distro  # pylint: disable=import-error
+
+        IS_WINDOWS = os.name == "nt"
+        IS_MAC = sys.platform == "darwin"
+        IS_LINUX = sys.platform == "linux"
+
+        python_version = ".".join(map(str, sys.version_info[:3]))
+        pyver = f"{python_version} ({platform.architecture()[0]})"
+        pipver = pip.__version__
+        redver = red_version_info
+        dpy_version = discord.__version__
+        if IS_WINDOWS:
+            os_info = platform.uname()
+            osver = f"{os_info.system} {os_info.release} (version {os_info.version})"
+        elif IS_MAC:
+            os_info = platform.mac_ver()
+            osver = f"Mac OSX {os_info[0]} {os_info[2]}"
+        elif IS_LINUX:
+            osver = f"{distro.name()} {distro.version()}".strip()
+        else:
+            osver = "Could not parse OS, report this on Github."
+        user_who_ran = getpass.getuser()
+        driver = storage_type()
+
+        from redbot.core.data_manager import basic_config, config_file
+
+        data_path = Path(basic_config["DATA_PATH"])
+        disabled_intents = (
+            ", ".join(
+                intent_name.replace("_", " ").title()
+                for intent_name, enabled in self.bot.intents
+                if not enabled
+            )
+            or "None"
+        )
+
+        def _datasize(num: int):
+            for unit in ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB"]:
+                if abs(num) < 1024.0:
+                    return "{0:.1f}{1}".format(num, unit)
+                num /= 1024.0
+            return "{0:.1f}{1}".format(num, "YB")
+
+        memory_ram = psutil.virtual_memory()
+        ram_string = "{used}/{total} ({percent}%)".format(
+            used=_datasize(memory_ram.used),
+            total=_datasize(memory_ram.total),
+            percent=memory_ram.percent,
+        )
+
+        owners = []
+        for uid in self.bot.owner_ids:
+            try:
+                u = await self.bot.get_or_fetch_user(uid)
+                owners.append(f"{u.id} ({u})")
+            except discord.HTTPException:
+                owners.append(f"{uid} (Unresolvable)")
+        owners_string = ", ".join(owners) or "None"
+
+        resp_intro = "# Debug Info for Red:"
+        resp_system_intro = "## System Metadata:"
+        resp_system = (
+            f"CPU Cores: {psutil.cpu_count()} ({platform.machine()})\nRAM: {ram_string}\n"
+        )
+        resp_os_intro = "## OS Variables:"
+        resp_os = f"OS version: {osver}\nUser: {user_who_ran}\n"  # Ran where off to?!
+        resp_py_metadata = (
+            f"Python executable: {sys.executable}\n"
+            f"Python version: {pyver}\n"
+            f"Pip version: {pipver}\n"
+        )
+        resp_red_metadata = f"Red version: {redver}\nDiscord.py version: {dpy_version}\n"
+        resp_red_vars_intro = "## Red variables:"
+        resp_red_vars = (
+            f"Instance name: {data_manager.instance_name}\n"
+            f"Owner(s): {owners_string}\n"
+            f"Storage type: {driver}\n"
+            f"Disabled intents: {disabled_intents}\n"
+            f"Data path: {data_path}\n"
+            f"Metadata file: {config_file}"
+        )
+
+        response = (
+            box(resp_intro, lang="md"),
+            "\n",
+            box(resp_system_intro, lang="md"),
+            box(resp_system),
+            "\n",
+            box(resp_os_intro, lang="md"),
+            box(resp_os),
+            box(resp_py_metadata),
+            box(resp_red_metadata),
+            "\n",
+            box(resp_red_vars_intro, lang="md"),
+            box(resp_red_vars),
+        )
+
+        await ctx.send("".join(response))
 
     # You may ask why this command is owner-only,
     # cause after all it could be quite useful to guild owners!
@@ -4126,7 +4228,7 @@ class Core(commands.commands._RuleDropper, commands.Cog, CoreLogic):
     async def diagnoseissues(
         self,
         ctx: commands.Context,
-        channel: Optional[Union[discord.TextChannel, discord.Thread]],
+        channel: Optional[discord.TextChannel],
         member: Union[discord.Member, discord.User],
         *,
         command_name: str,
@@ -4147,13 +4249,8 @@ class Core(commands.commands._RuleDropper, commands.Cog, CoreLogic):
         """
         if channel is None:
             channel = ctx.channel
-            if not isinstance(channel, (discord.TextChannel, discord.Thread)):
-                await ctx.send(
-                    _(
-                        "The text channel or thread needs to be passed"
-                        " when using this command in DMs."
-                    )
-                )
+            if not isinstance(channel, discord.TextChannel):
+                await ctx.send(_("The channel needs to be passed when using this command in DMs."))
                 return
 
         command = self.bot.get_command(command_name)
@@ -4170,7 +4267,7 @@ class Core(commands.commands._RuleDropper, commands.Cog, CoreLogic):
                 return
             member = maybe_member
 
-        if not can_user_send_messages_in(member, channel):
+        if not channel.permissions_for(member).send_messages:
             # Let's make Flame happy here
             await ctx.send(
                 _(
@@ -5081,7 +5178,7 @@ class Core(commands.commands._RuleDropper, commands.Cog, CoreLogic):
     async def rpc_unload(self, request):
         cog_name = request.params[0]
 
-        await self.bot.unload_extension(cog_name)
+        self.bot.unload_extension(cog_name)
 
     async def rpc_reload(self, request):
         await self.rpc_unload(request)
@@ -5089,7 +5186,7 @@ class Core(commands.commands._RuleDropper, commands.Cog, CoreLogic):
 
     @commands.group()
     @commands.guild_only()
-    @commands.admin_or_can_manage_channel()
+    @checks.admin_or_permissions(manage_channels=True)
     async def ignore(self, ctx: commands.Context):
         """
         Commands to add servers or channels to the ignore list.
@@ -5114,14 +5211,12 @@ class Core(commands.commands._RuleDropper, commands.Cog, CoreLogic):
     async def ignore_channel(
         self,
         ctx: commands.Context,
-        channel: Optional[
-            Union[discord.TextChannel, discord.CategoryChannel, discord.Thread]
-        ] = None,
+        channel: Optional[Union[discord.TextChannel, discord.CategoryChannel]] = None,
     ):
         """
-        Ignore commands in the channel, thread, or category.
+        Ignore commands in the channel or category.
 
-        Defaults to the current thread or channel.
+        Defaults to the current channel.
 
         Note: Owners, Admins, and those with Manage Channel permissions override ignored channels.
 
@@ -5132,7 +5227,7 @@ class Core(commands.commands._RuleDropper, commands.Cog, CoreLogic):
             - `[p]ignore channel 356236713347252226` - Also accepts IDs.
 
         **Arguments:**
-            - `<channel>` - The channel to ignore. This can also be a thread or category channel.
+            - `<channel>` - The channel to ignore. Can be a category channel.
         """
         if not channel:
             channel = ctx.channel
@@ -5162,7 +5257,7 @@ class Core(commands.commands._RuleDropper, commands.Cog, CoreLogic):
 
     @commands.group()
     @commands.guild_only()
-    @commands.admin_or_can_manage_channel()
+    @checks.admin_or_permissions(manage_channels=True)
     async def unignore(self, ctx: commands.Context):
         """Commands to remove servers or channels from the ignore list."""
 
@@ -5170,14 +5265,12 @@ class Core(commands.commands._RuleDropper, commands.Cog, CoreLogic):
     async def unignore_channel(
         self,
         ctx: commands.Context,
-        channel: Optional[
-            Union[discord.TextChannel, discord.CategoryChannel, discord.Thread]
-        ] = None,
+        channel: Optional[Union[discord.TextChannel, discord.CategoryChannel]] = None,
     ):
         """
-        Remove a channel, thread, or category from the ignore list.
+        Remove a channel or category from the ignore list.
 
-        Defaults to the current thread or channel.
+        Defaults to the current channel.
 
         **Examples:**
             - `[p]unignore channel #general` - Unignores commands in the #general channel.
@@ -5186,7 +5279,7 @@ class Core(commands.commands._RuleDropper, commands.Cog, CoreLogic):
             - `[p]unignore channel 356236713347252226` - Also accepts IDs. Use this method to unignore categories.
 
         **Arguments:**
-            - `<channel>` - The channel to unignore. This can also be a thread or category channel.
+            - `<channel>` - The channel to unignore. This can be a category channel.
         """
         if not channel:
             channel = ctx.channel
@@ -5216,7 +5309,6 @@ class Core(commands.commands._RuleDropper, commands.Cog, CoreLogic):
     async def count_ignored(self, ctx: commands.Context):
         category_channels: List[discord.CategoryChannel] = []
         text_channels: List[discord.TextChannel] = []
-        threads: List[discord.Thread] = []
         if await self.bot._ignored_cache.get_ignored_guild(ctx.guild):
             return _("This server is currently being ignored.")
         for channel in ctx.guild.text_channels:
@@ -5225,22 +5317,14 @@ class Core(commands.commands._RuleDropper, commands.Cog, CoreLogic):
                     category_channels.append(channel.category)
             if await self.bot._ignored_cache.get_ignored_channel(channel, check_category=False):
                 text_channels.append(channel)
-        for thread in ctx.guild.threads:
-            if await self.bot_ignored_cache.get_ignored_channel(thread, check_category=False):
-                threads.append(thread)
 
         cat_str = (
-            humanize_list([c.name for c in category_channels]) if category_channels else _("None")
+            humanize_list([c.name for c in category_channels]) if category_channels else "None"
         )
-        chan_str = (
-            humanize_list([c.mention for c in text_channels]) if text_channels else _("None")
+        chan_str = humanize_list([c.mention for c in text_channels]) if text_channels else "None"
+        msg = _("Currently ignored categories: {categories}\nChannels: {channels}").format(
+            categories=cat_str, channels=chan_str
         )
-        thread_str = humanize_list([c.mention for c in threads]) if threads else _("None")
-        msg = _(
-            "Currently ignored categories: {categories}\n"
-            "Channels: {channels}\n"
-            "Threads (excluding archived):{threads}"
-        ).format(categories=cat_str, channels=chan_str, threads=thread_str)
         return msg
 
     # Removing this command from forks is a violation of the GPLv3 under which it is licensed.
