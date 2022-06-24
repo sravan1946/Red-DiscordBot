@@ -287,8 +287,10 @@ def _early_init():
     _ensure_no_colorama()
 
 
-__version__ = "3.4.17"
-version_info = VersionInfo.from_str(__version__)
+# This is bumped automatically by release workflow (`.github/workflows/scripts/bump_version.py`)
+_VERSION = "3.5.0.dev1"
+
+__version__, version_info = VersionInfo._get_version()
 
 # Filter fuzzywuzzy slow sequence matcher warning
 _warnings.filterwarnings("ignore", module=r"fuzzywuzzy.*")
