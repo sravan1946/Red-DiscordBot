@@ -205,6 +205,30 @@ def start_adding_reactions(
 
     return asyncio.create_task(task())
 
+async def first_page(
+    ctx: commands.Context,
+    pages: list,
+    controls: dict,
+    message: discord.Message,
+    page: int,
+    timeout: float,
+    emoji: str,
+):
+    page = 0
+    return await menu(ctx, pages, controls, message=message, page=page, timeout=timeout)
+
+async def last_page(
+    ctx: commands.Context,
+    pages: list,
+    controls: dict,
+    message: discord.Message,
+    page: int,
+    timeout: float,
+    emoji: str,
+):
+    page = len(pages) - 1
+    return await menu(ctx, pages, controls, message=message, page=page, timeout=timeout)
+
 
 DEFAULT_CONTROLS = {
     "\N{LEFTWARDS BLACK ARROW}\N{VARIATION SELECTOR-16}": prev_page,

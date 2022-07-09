@@ -1637,44 +1637,6 @@ class Downloader(commands.Cog):
         if not updated_cognames:
             await ctx.send(_("None of the updated cogs were previously loaded. Update complete."))
             return
-
-        if not ctx.assume_yes:
-            message = (
-                _("Would you like to reload the updated cogs?")
-                if len(updated_cognames) > 1
-                else _("Would you like to reload the updated cog?")
-            )
-            can_react = ctx.channel.permissions_for(ctx.me).add_reactions
-            if not can_react:
-                message += " (yes/no)"
-            query: discord.Message = await ctx.send(message)
-            if can_react:
-                # noinspection PyAsyncCall
-                start_adding_reactions(query, ReactionPredicate.YES_OR_NO_EMOJIS)
-                pred = ReactionPredicate.yes_or_no(query, ctx.author)
-                event = "reaction_add"
-            else:
-                pred = MessagePredicate.yes_or_no(ctx)
-                event = "message"
-            try:
-                await ctx.bot.wait_for(event, check=pred, timeout=30)
-            except asyncio.TimeoutError:
-                with contextlib.suppress(discord.NotFound):
-                    await query.delete()
-                return
-
-            if not pred.result:
-                if can_react:
-                    with contextlib.suppress(discord.NotFound):
-                        await query.delete()
-                else:
-                    await ctx.send(_("OK then."))
-                return
-            else:
-                if can_react:
-                    with contextlib.suppress(discord.Forbidden):
-                        await query.clear_reactions()
-
         await ctx.invoke(ctx.bot.get_cog("Core").reload, *updated_cognames)
 
     def cog_name_from_instance(self, instance: object) -> str:
