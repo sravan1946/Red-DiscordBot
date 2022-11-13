@@ -136,5 +136,5 @@ class Bank(commands.Cog):
     # ENDSECTION
 
     async def red_delete_data_for_user(self, **kwargs):
-        """ Nothing to delete """
+        """Nothing to delete"""
         return

@@ -349,7 +349,7 @@ class Filter(commands.Cog):
     def invalidate_cache(
         self, guild: discord.Guild, channel: Optional[discord.TextChannel] = None
     ) -> None:
-        """ Invalidate a cached pattern"""
+        """Invalidate a cached pattern"""
         self.pattern_cache.pop((guild.id, channel and channel.id), None)
         if channel is None:
             for keyset in list(self.pattern_cache.keys()):  # cast needed, no remove
@@ -471,7 +471,9 @@ class Filter(commands.Cog):
             except discord.HTTPException:
                 pass
             else:
-                await message.channel.send(f"{author.mention} You can't say that!", delete_after=10)
+                await message.channel.send(
+                    f"{author.mention} You can't say that!", delete_after=10
+                )
                 self.bot.dispatch("filter_message_delete", message, hits)
                 if filter_count > 0 and filter_time > 0:
                     user_count += 1

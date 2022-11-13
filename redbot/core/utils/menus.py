@@ -205,6 +205,7 @@ def start_adding_reactions(
 
     return asyncio.create_task(task())
 
+
 async def first_page(
     ctx: commands.Context,
     pages: list,
@@ -216,6 +217,7 @@ async def first_page(
 ):
     page = 0
     return await menu(ctx, pages, controls, message=message, page=page, timeout=timeout)
+
 
 async def last_page(
     ctx: commands.Context,
