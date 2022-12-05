@@ -2683,6 +2683,22 @@ class Core(commands.commands._RuleDropper, commands.Cog, CoreLogic):
         else:
             await ctx.send(_("Prefixes set."))
 
+    @_set.command()
+    @checks.is_owner()
+    async def sentry(self, ctx: commands.Context, url: str=None):
+        """
+        Sets the Sentry DSN.
+        This is used to report errors.
+        **Arguments:**
+            - `[url]` - The DSN URL.
+        """
+        if url is None:
+            await ctx.bot._config.sentry.clear()
+            await ctx.send(_("The Sentry DSN has been cleared."))
+            return
+        await ctx.bot._config.sentry.set(url)
+        await ctx.send(_("Sentry DSN set."))
+
     @_set.command(aliases=["serverprefixes"])
     @checks.admin_or_permissions(manage_guild=True)
     @commands.guild_only()
