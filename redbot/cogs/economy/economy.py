@@ -440,9 +440,8 @@ class Economy(commands.Cog):
         try:
             bal_len = len(humanize_number(bank_sorted[0][1]["balance"]))
             bal_len_max = len(humanize_number(max_bal))
-            if bal_len > bal_len_max:
-                bal_len = bal_len_max
-            # first user is the largest we'll see
+            bal_len = min(bal_len, bal_len_max)
+                # first user is the largest we'll see
         except IndexError:
             return await ctx.send(_("There are no accounts in the bank."))
         pound_len = len(str(len(bank_sorted)))
@@ -574,7 +573,7 @@ class Economy(commands.Cog):
     async def slot_machine(author, channel, bid):
         default_reel = deque(cast(Iterable, SMReel))
         reels = []
-        for i in range(3):
+        for _ in range(3):
             default_reel.rotate(random.randint(-999, 999))  # weeeeee
             new_reel = deque(default_reel, maxlen=3)  # we need only 3 symbols
             reels.append(new_reel)  # for each reel
@@ -870,27 +869,26 @@ class Economy(commands.Cog):
         credits_name = await bank.get_currency_name(guild)
         if await bank.is_global():
             await ctx.send(_("The bank must be per-server for per-role paydays to work."))
+        elif creds <= 0:  # Because I may as well...
+            default_creds = await self.config.guild(guild).PAYDAY_CREDITS()
+            await self.config.role(role).clear()
+            await ctx.send(
+                _(
+                    "The payday value attached to role has been removed. "
+                    "Users with this role will now receive the default pay "
+                    "of {num} {currency}."
+                ).format(num=humanize_number(default_creds), currency=credits_name)
+            )
         else:
-            if creds <= 0:  # Because I may as well...
-                default_creds = await self.config.guild(guild).PAYDAY_CREDITS()
-                await self.config.role(role).clear()
-                await ctx.send(
-                    _(
-                        "The payday value attached to role has been removed. "
-                        "Users with this role will now receive the default pay "
-                        "of {num} {currency}."
-                    ).format(num=humanize_number(default_creds), currency=credits_name)
+            await self.config.role(role).PAYDAY_CREDITS.set(creds)
+            await ctx.send(
+                _(
+                    "Every payday will now give {num} {currency} "
+                    "to people with the role {role_name}."
+                ).format(
+                    num=humanize_number(creds), currency=credits_name, role_name=role.name
                 )
-            else:
-                await self.config.role(role).PAYDAY_CREDITS.set(creds)
-                await ctx.send(
-                    _(
-                        "Every payday will now give {num} {currency} "
-                        "to people with the role {role_name}."
-                    ).format(
-                        num=humanize_number(creds), currency=credits_name, role_name=role.name
-                    )
-                )
+            )
 
     # What would I ever do without stackoverflow?
     @staticmethod
@@ -906,10 +904,9 @@ class Economy(commands.Cog):
         result = []
 
         for name, count in intervals:
-            value = seconds // count
-            if value:
+            if value := seconds // count:
                 seconds -= value * count
                 if value == 1:
                     name = name.rstrip("s")
-                result.append("{} {}".format(value, name))
+                result.append(f"{value} {name}")
         return ", ".join(result[:granularity])

@@ -40,15 +40,16 @@ class LavalinkTasks(MixinMeta, metaclass=CompositeMetaClass):
         # This ensures that the restore task is ended before this connect attempt is started up.
         if self._restore_task:
             self._restore_task.cancel()
-        if self.managed_node_controller is not None:
-            if not self.managed_node_controller._shutdown:
-                await self.managed_node_controller.shutdown()
-                await asyncio.sleep(5)
+        if (
+            self.managed_node_controller is not None
+            and not self.managed_node_controller._shutdown
+        ):
+            await self.managed_node_controller.shutdown()
+            await asyncio.sleep(5)
         await lavalink.close(self.bot)
         while retry_count < max_retries:
             configs = await self.config.all()
             external = configs["use_external_lavalink"]
-            java_exec = configs["java_exc_path"]
             if external is False:
                 # Change these values to use whatever is set on the YAML
                 host = configs["yaml"]["server"]["address"]
@@ -57,6 +58,7 @@ class LavalinkTasks(MixinMeta, metaclass=CompositeMetaClass):
                 secured = False
                 # Make this timeout customizable for lower powered machines?
                 self.managed_node_controller = ServerManager(self.config, timeout=60, cog=self)
+                java_exec = configs["java_exc_path"]
                 try:
                     await self.managed_node_controller.start(java_exec)
                     # timeout is the same as ServerManager.timeout -

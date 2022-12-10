@@ -62,10 +62,7 @@ MENTION_RE: Final[Pattern] = re.compile(r"^<?(?:(?:@[!&]?)?|#)(\d{15,20})>?$")
 
 
 def _match_id(arg: str) -> Optional[int]:
-    m = MENTION_RE.match(arg)
-    if m:
-        return int(m.group(1))
-    return None
+    return int(m.group(1)) if (m := MENTION_RE.match(arg)) else None
 
 
 async def global_unique_guild_finder(ctx: commands.Context, arg: str) -> discord.Guild:
@@ -117,9 +114,7 @@ async def global_unique_user_finder(
         maybe_matches.append(user)
 
     if guild is not None:
-        async for member in AsyncIter(guild.members).filter(
-            lambda m: m.nick == arg and not any(obj.id == m.id for obj in maybe_matches)
-        ):
+        async for member in AsyncIter(guild.members).filter(lambda m: m.nick == arg and all(obj.id != m.id for obj in maybe_matches)):
             maybe_matches.append(member)
 
     if not maybe_matches:
@@ -143,11 +138,10 @@ async def global_unique_user_finder(
 class PlaylistConverter(commands.Converter):
     async def convert(self, ctx: commands.Context, arg: str) -> MutableMapping:
         """Get playlist for all scopes that match the argument user provided"""
-        cog = ctx.cog
         user_matches = []
         guild_matches = []
         global_matches = []
-        if cog:
+        if cog := ctx.cog:
             global_matches = await get_all_playlist_converter(
                 PlaylistScope.GLOBAL.value,
                 ctx.bot,
@@ -236,7 +230,7 @@ class ScopeParser(commands.Converter):
             if scope not in valid_scopes:
                 raise commands.ArgParserFailure("--scope", scope_raw, custom_help=_(_SCOPE_HELP))
             target_scope = standardize_scope(scope)
-        elif "--scope" in argument and not vals["scope"]:
+        elif "--scope" in argument:
             raise commands.ArgParserFailure("--scope", _("Nothing"), custom_help=_(_SCOPE_HELP))
 
         is_owner = await ctx.bot.is_owner(ctx.author)
@@ -261,8 +255,11 @@ class ScopeParser(commands.Converter):
         elif any(x in argument for x in ["--guild", "--server"]):
             raise commands.ArgParserFailure("--guild", _("Nothing"), custom_help=_(_GUILD_HELP))
 
-        author = vals.get("author", None) or vals.get("user", None) or vals.get("member", None)
-        if author:
+        if (
+            author := vals.get("author", None)
+            or vals.get("user", None)
+            or vals.get("member", None)
+        ):
             user_error = ""
             target_user = None
             user_raw = " ".join(author).strip()
@@ -362,7 +359,7 @@ class ComplexScopeParser(commands.Converter):
                     "--to-scope", to_scope_raw, custom_help=_SCOPE_HELP
                 )
             target_scope = standardize_scope(to_scope)
-        elif "--to-scope" in argument and not vals["to_scope"]:
+        elif "--to-scope" in argument:
             raise commands.ArgParserFailure("--to-scope", _("Nothing"), custom_help=_(_SCOPE_HELP))
 
         if vals["from_scope"]:
@@ -429,10 +426,11 @@ class ComplexScopeParser(commands.Converter):
                 "--from-server", _("Nothing"), custom_help=_(_GUILD_HELP)
             )
 
-        to_author = (
-            vals.get("to_author", None) or vals.get("to_user", None) or vals.get("to_member", None)
-        )
-        if to_author:
+        if to_author := (
+            vals.get("to_author", None)
+            or vals.get("to_user", None)
+            or vals.get("to_member", None)
+        ):
             target_user_error = ""
             target_user = None
             to_user_raw = " ".join(to_author).strip()
@@ -450,12 +448,11 @@ class ComplexScopeParser(commands.Converter):
         elif any(x in argument for x in ["--to-author", "--to-user", "--to-member"]):
             raise commands.ArgParserFailure("--to-user", _("Nothing"), custom_help=_(_USER_HELP))
 
-        from_author = (
+        if from_author := (
             vals.get("from_author", None)
             or vals.get("from_user", None)
             or vals.get("from_member", None)
-        )
-        if from_author:
+        ):
             source_user_error = ""
             source_user = None
             from_user_raw = " ".join(from_author).strip()

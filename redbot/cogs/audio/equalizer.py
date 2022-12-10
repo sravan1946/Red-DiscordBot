@@ -42,11 +42,7 @@ class Equalizer:
             block += f"{prefix}{gain:.2f} | "
 
             for value in self.bands:
-                if value >= gain:
-                    block += "[] "
-                else:
-                    block += "   "
-
+                block += "[] " if value >= gain else "   "
             block += "\n"
 
         block += bottom

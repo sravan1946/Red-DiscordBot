@@ -78,8 +78,8 @@ class MiscellaneousUtilities(MixinMeta, metaclass=CompositeMetaClass):
                 embed = embed.to_dict()
         else:
             embed = {}
-        colour = embed.get("color") if embed.get("color") else colour
-        contents.update(embed)
+        colour = embed.get("color") or colour
+        contents |= embed
         embed = discord.Embed.from_dict(contents)
         embed.color = colour
         if timestamp and isinstance(timestamp, datetime.datetime):
@@ -125,13 +125,12 @@ class MiscellaneousUtilities(MixinMeta, metaclass=CompositeMetaClass):
 
     async def update_external_status(self) -> bool:
         external = await self.config.use_external_lavalink()
-        if not external:
-            if self.managed_node_controller is not None:
-                await self.managed_node_controller.shutdown()
-            await self.config.use_external_lavalink.set(True)
-            return True
-        else:
+        if external:
             return False
+        if self.managed_node_controller is not None:
+            await self.managed_node_controller.shutdown()
+        await self.config.use_external_lavalink.set(True)
+        return True
 
     def rsetattr(self, obj, attr, val) -> None:
         pre, _, post = attr.rpartition(".")
@@ -182,15 +181,10 @@ class MiscellaneousUtilities(MixinMeta, metaclass=CompositeMetaClass):
         track_keys = track._info.keys()
         track_values = track._info.values()
         track_id = track.track_identifier
-        track_info = {}
-        for k, v in zip(track_keys, track_values):
-            track_info[k] = v
+        track_info = dict(zip(track_keys, track_values))
         keys = ["track", "info", "extras"]
         values = [track_id, track_info]
-        track_obj = {}
-        for key, value in zip(keys, values):
-            track_obj[key] = value
-        return track_obj
+        return dict(zip(keys, values))
 
     def time_convert(self, length: Union[int, str]) -> int:
         if isinstance(length, int):
@@ -201,8 +195,7 @@ class MiscellaneousUtilities(MixinMeta, metaclass=CompositeMetaClass):
             hr = int(match.group(1)) if match.group(1) else 0
             mn = int(match.group(2)) if match.group(2) else 0
             sec = int(match.group(3)) if match.group(3) else 0
-            pos = sec + (mn * 60) + (hr * 3600)
-            return pos
+            return sec + (mn * 60) + (hr * 3600)
         else:
             try:
                 return int(length)
@@ -219,24 +212,25 @@ class MiscellaneousUtilities(MixinMeta, metaclass=CompositeMetaClass):
         if not player.queue:
             queue_dur = 0
         try:
-            if not player.current.is_stream:
-                remain = player.current.length - player.position
-            else:
-                remain = 0
+            remain = (
+                0
+                if player.current.is_stream
+                else player.current.length - player.position
+            )
         except AttributeError:
             remain = 0
-        queue_total_duration = remain + queue_dur
-        return queue_total_duration
+        return remain + queue_dur
 
     async def track_remaining_duration(self, ctx: commands.Context) -> int:
         player = lavalink.get_player(ctx.guild.id)
         if not player.current:
             return 0
         try:
-            if not player.current.is_stream:
-                remain = player.current.length - player.position
-            else:
-                remain = 0
+            remain = (
+                0
+                if player.current.is_stream
+                else player.current.length - player.position
+            )
         except AttributeError:
             remain = 0
         return remain
@@ -264,12 +258,8 @@ class MiscellaneousUtilities(MixinMeta, metaclass=CompositeMetaClass):
         days, seconds = divmod(seconds, 24 * 60 * 60)
         hours, seconds = divmod(seconds, 60 * 60)
         minutes, seconds = divmod(seconds, 60)
-        day = ""
-        hour = ""
-        if days:
-            day = "%02d:" % days
-        if hours or day:
-            hour = "%02d:" % hours
+        day = "%02d:" % days if days else ""
+        hour = "%02d:" % hours if hours or day else ""
         minutes = "%02d:" % minutes
         sec = "%02d" % seconds
         return f"{day}{hour}{minutes}{sec}"
@@ -290,8 +280,7 @@ class MiscellaneousUtilities(MixinMeta, metaclass=CompositeMetaClass):
             all_guild_data = await self.config.all_guilds()
             all_playlist = {}
             async for guild_id, guild_data in AsyncIter(all_guild_data.items()):
-                temp_guild_playlist = guild_data.pop("playlists", None)
-                if temp_guild_playlist:
+                if temp_guild_playlist := guild_data.pop("playlists", None):
                     guild_playlist = {}
                     async for count, (name, data) in AsyncIter(
                         temp_guild_playlist.items()
@@ -299,13 +288,12 @@ class MiscellaneousUtilities(MixinMeta, metaclass=CompositeMetaClass):
                         if not data or not name:
                             continue
                         playlist = {"id": count, "name": name, "guild": int(guild_id)}
-                        playlist.update(data)
+                        playlist |= data
                         guild_playlist[str(count)] = playlist
 
                         tracks_in_playlist = data.get("tracks", []) or []
                         async for t in AsyncIter(tracks_in_playlist):
-                            uri = t.get("info", {}).get("uri")
-                            if uri:
+                            if uri := t.get("info", {}).get("uri"):
                                 t = {"loadType": "V2_COMPAT", "tracks": [t], "query": uri}
                                 data = json.dumps(t)
                                 if all(
@@ -392,7 +380,7 @@ class MiscellaneousUtilities(MixinMeta, metaclass=CompositeMetaClass):
         source = reader.read_utf().decode()
         position = reader.read_long()  # noqa: F841 pylint: disable=unused-variable
 
-        track_object = {
+        return {
             "track": track,
             "info": {
                 "title": title,
@@ -404,5 +392,3 @@ class MiscellaneousUtilities(MixinMeta, metaclass=CompositeMetaClass):
                 "isSeekable": not is_stream,
             },
         }
-
-        return track_object

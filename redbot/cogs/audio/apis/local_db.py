@@ -175,9 +175,7 @@ class BaseWrapper:
                     log.verbose("Failed to completed fetch from database", exc_info=exc)
         if not row:
             return None
-        if self.fetch_result is None:
-            return None
-        return self.fetch_result(*row)
+        return None if self.fetch_result is None else self.fetch_result(*row)
 
     async def _fetch_all(
         self, values: MutableMapping
@@ -216,18 +214,12 @@ class BaseWrapper:
             ):
                 try:
                     row_result = future.result()
-                    rows = row_result.fetchall()
-                    if rows:
-                        row = random.choice(rows)
-                    else:
-                        row = None
+                    row = random.choice(rows) if (rows := row_result.fetchall()) else None
                 except Exception as exc:
                     log.verbose("Failed to completed random fetch from database", exc_info=exc)
         if not row:
             return None
-        if self.fetch_result is None:
-            return None
-        return self.fetch_result(*row)
+        return None if self.fetch_result is None else self.fetch_result(*row)
 
 
 class YouTubeTableWrapper(BaseWrapper):
@@ -261,9 +253,7 @@ class YouTubeTableWrapper(BaseWrapper):
     async def fetch_random(self, values: MutableMapping) -> Optional[str]:
         """Get a random entry from the Youtube table"""
         result = await self._fetch_random(values)
-        if not result or not isinstance(result.query, str):
-            return None
-        return result.query
+        return result.query if result and isinstance(result.query, str) else None
 
 
 class SpotifyTableWrapper(BaseWrapper):
@@ -297,9 +287,7 @@ class SpotifyTableWrapper(BaseWrapper):
     async def fetch_random(self, values: MutableMapping) -> Optional[str]:
         """Get a random entry from the Spotify table"""
         result = await self._fetch_random(values)
-        if not result or not isinstance(result.query, str):
-            return None
-        return result.query
+        return result.query if result and isinstance(result.query, str) else None
 
 
 class LavalinkTableWrapper(BaseWrapper):
@@ -335,9 +323,7 @@ class LavalinkTableWrapper(BaseWrapper):
     async def fetch_random(self, values: MutableMapping) -> Optional[MutableMapping]:
         """Get a random entry from the Lavalink table"""
         result = await self._fetch_random(values)
-        if not result or not isinstance(result.query, dict):
-            return None
-        return result.query
+        return result.query if result and isinstance(result.query, dict) else None
 
     async def fetch_all_for_global(self) -> List[LavalinkCacheFetchForGlobalResult]:
         """Get all entries from the Lavalink table"""

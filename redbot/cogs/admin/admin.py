@@ -269,7 +269,7 @@ class Admin(commands.Cog):
             `[p]editrole colour Test #ff9900`
         """
         author = ctx.author
-        reason = "{}({}) changed the colour of role '{}'".format(author.name, author.id, role.name)
+        reason = f"{author.name}({author.id}) changed the colour of role '{role.name}'"
 
         if not self.pass_user_hierarchy_check(ctx, role):
             await ctx.send(_(ROLE_USER_HIERARCHY_ISSUE).format(role=role))
@@ -300,9 +300,7 @@ class Admin(commands.Cog):
         """
         author = ctx.message.author
         old_name = role.name
-        reason = "{}({}) changed the name of role '{}' to '{}'".format(
-            author.name, author.id, old_name, name
-        )
+        reason = f"{author.name}({author.id}) changed the name of role '{old_name}' to '{name}'"
 
         if not self.pass_user_hierarchy_check(ctx, role):
             await ctx.send(_(ROLE_USER_HIERARCHY_ISSUE).format(role=role))
@@ -378,7 +376,7 @@ class Admin(commands.Cog):
         guild_roles = guild.roles
 
         valid_roles = tuple(r for r in guild_roles if r.id in selfrole_ids)
-        valid_role_ids = set(r.id for r in valid_roles)
+        valid_role_ids = {r.id for r in valid_roles}
 
         if selfrole_ids != valid_role_ids:
             await self.config.guild(guild).selfroles.set(list(valid_role_ids))
@@ -428,7 +426,7 @@ class Admin(commands.Cog):
         Lists all available selfroles.
         """
         selfroles = await self._valid_selfroles(ctx.guild)
-        fmt_selfroles = "\n".join(["+ " + r.name for r in selfroles])
+        fmt_selfroles = "\n".join([f"+ {r.name}" for r in selfroles])
 
         if not fmt_selfroles:
             await ctx.send("There are currently no selfroles.")

@@ -83,16 +83,14 @@ class AudioAPIInterface:
         """Get a random track from the local database and return it."""
         track: Optional[MutableMapping] = {}
         try:
-            query_data = {}
             date = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=7)
             date_timestamp = int(date.timestamp())
-            query_data["day"] = date_timestamp
             max_age = await self.config.cache_age()
             maxage = datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(
                 days=max_age
             )
             maxage_int = int(time.mktime(maxage.timetuple()))
-            query_data["maxage"] = maxage_int
+            query_data = {"day": date_timestamp, "maxage": maxage_int}
             track = await self.local_cache_api.lavalink.fetch_random(query_data)
             if track is not None:
                 if track.get("loadType") == "V2_COMPACT":
@@ -103,10 +101,7 @@ class AudioAPIInterface:
             log.trace("Failed to fetch a random track from database", exc_info=exc)
             track = {}
 
-        if not track:
-            return None
-
-        return track
+        return track or None
 
     async def route_tasks(
         self,
@@ -235,7 +230,7 @@ class AudioAPIInterface:
                     "last_fetched": time_now,
                 }
             )
-            if skip_youtube is False:
+            if not skip_youtube:
                 val = None
                 if youtube_cache:
                     try:
@@ -264,15 +259,13 @@ class AudioAPIInterface:
             track_count += 1
             if notifier is not None and ((track_count % 2 == 0) or (track_count == total_tracks)):
                 await notifier.notify_user(current=track_count, total=total_tracks, key="youtube")
-            if notifier is not None and (youtube_api_error and not global_api):
+            if notifier is not None and youtube_api_error and not global_api:
                 error_embed = discord.Embed(
                     colour=await ctx.embed_colour(),
                     title=_("Failing to get tracks, skipping remaining."),
                 )
                 await notifier.update_embed(error_embed)
                 break
-            elif notifier is not None and (youtube_api_error and global_api):
-                continue
         if CacheLevel.set_spotify().is_subset(current_cache_level):
             task = ("insert", ("spotify", database_entries))
             self.append_task(ctx, *task)
@@ -292,12 +285,11 @@ class AudioAPIInterface:
         if recursive is False:
             (call, params) = self.spotify_api.spotify_format_call(query_type, uri)
             results = await self.spotify_api.make_get_call(call, params)
+        elif isinstance(recursive, str):
+            results = await self.spotify_api.make_get_call(recursive, params)
         else:
-            if isinstance(recursive, str):
-                results = await self.spotify_api.make_get_call(recursive, params)
-            else:
-                results = {}
-        try:
+            results = {}
+        with contextlib.suppress(KeyError):
             if results["error"]["status"] == 401 and not recursive:
                 raise SpotifyFetchError(
                     _(
@@ -307,8 +299,6 @@ class AudioAPIInterface:
                 )
             elif recursive:
                 return {"next": None}
-        except KeyError:
-            pass
         if recursive:
             return results
         tracks = []
@@ -316,30 +306,26 @@ class AudioAPIInterface:
         total_tracks = results.get("tracks", results).get("total", 1)
         while True:
             new_tracks: List = []
-            if query_type == "track":
-                new_tracks = results
-                tracks.append(new_tracks)
-            elif query_type == "album":
-                tracks_raw = results.get("tracks", results).get("items", [])
-                if tracks_raw:
+            if query_type == "album":
+                if tracks_raw := results.get("tracks", results).get("items", []):
                     new_tracks = tracks_raw
                     tracks.extend(new_tracks)
-            else:
-                tracks_raw = results.get("tracks", results).get("items", [])
-                if tracks_raw:
-                    new_tracks = [k["track"] for k in tracks_raw if k.get("track")]
-                    tracks.extend(new_tracks)
+            elif query_type == "track":
+                new_tracks = results
+                tracks.append(new_tracks)
+            elif tracks_raw := results.get("tracks", results).get("items", []):
+                new_tracks = [k["track"] for k in tracks_raw if k.get("track")]
+                tracks.extend(new_tracks)
             track_count += len(new_tracks)
             if notifier:
                 await notifier.notify_user(current=track_count, total=total_tracks, key="spotify")
             try:
-                if results.get("next") is not None:
-                    results = await self.fetch_from_spotify_api(
-                        query_type, uri, results["next"], params, notifier=notifier
-                    )
-                    continue
-                else:
+                if results.get("next") is None:
                     break
+                results = await self.fetch_from_spotify_api(
+                    query_type, uri, results["next"], params, notifier=notifier
+                )
+                continue
             except KeyError:
                 raise SpotifyFetchError(
                     _("This doesn't seem to be a valid Spotify playlist/album URL or code.")

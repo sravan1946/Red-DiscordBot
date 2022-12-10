@@ -260,7 +260,7 @@ class DpyEvents(MixinMeta, metaclass=CompositeMetaClass):
                 )
             if not self.antispam[ctx.author.id][ctx.command.callback.__name__].spammy:
                 token = random.choices((*ascii_letters, *digits), k=4)
-                confirm_token = "  ".join(i for i in token)
+                confirm_token = "  ".join(token)
                 token = confirm_token.replace(" ", "")
                 message = bold(
                     underline(_("You should not be running this command.")),
@@ -413,29 +413,30 @@ class DpyEvents(MixinMeta, metaclass=CompositeMetaClass):
             await self.bot.on_command_error(ctx, error, unhandled_by_cog=True)
 
     async def cog_unload(self) -> None:
-        if not self.cog_cleaned_up:
-            self.bot.dispatch("red_audio_unload", self)
-            await self.session.close()
-            if self.player_automated_timer_task:
-                self.player_automated_timer_task.cancel()
+        if self.cog_cleaned_up:
+            return
+        self.bot.dispatch("red_audio_unload", self)
+        await self.session.close()
+        if self.player_automated_timer_task:
+            self.player_automated_timer_task.cancel()
 
-            if self.lavalink_connect_task:
-                self.lavalink_connect_task.cancel()
+        if self.lavalink_connect_task:
+            self.lavalink_connect_task.cancel()
 
-            if self.cog_init_task:
-                self.cog_init_task.cancel()
+        if self.cog_init_task:
+            self.cog_init_task.cancel()
 
-            if self._restore_task:
-                self._restore_task.cancel()
+        if self._restore_task:
+            self._restore_task.cancel()
 
-            lavalink.unregister_event_listener(self.lavalink_event_handler)
-            lavalink.unregister_update_listener(self.lavalink_update_handler)
-            await lavalink.close(self.bot)
-            await self._close_database()
-            if self.managed_node_controller is not None:
-                await self.managed_node_controller.shutdown()
+        lavalink.unregister_event_listener(self.lavalink_event_handler)
+        lavalink.unregister_update_listener(self.lavalink_update_handler)
+        await lavalink.close(self.bot)
+        await self._close_database()
+        if self.managed_node_controller is not None:
+            await self.managed_node_controller.shutdown()
 
-            self.cog_cleaned_up = True
+        self.cog_cleaned_up = True
 
     @commands.Cog.listener()
     async def on_voice_state_update(
@@ -445,11 +446,8 @@ class DpyEvents(MixinMeta, metaclass=CompositeMetaClass):
             return
         await self.cog_ready_event.wait()
         if after.channel != before.channel:
-            try:
+            with contextlib.suppress(ValueError, KeyError, AttributeError):
                 self.skip_votes[before.channel.guild.id].discard(member.id)
-            except (ValueError, KeyError, AttributeError):
-                pass
-
         channel = self.rgetattr(member, "voice.channel", None)
         bot_voice_state = self.rgetattr(member, "guild.me.voice.self_deaf", None)
         if (

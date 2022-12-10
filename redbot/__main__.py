@@ -58,7 +58,7 @@ def list_instances():
     else:
         text = "Configured Instances:\n\n"
         for instance_name in _get_instance_names():
-            text += "{}\n".format(instance_name)
+            text += f"{instance_name}\n"
         print(text)
         sys.exit(0)
 
@@ -112,7 +112,7 @@ async def edit_instance(red, cli_flags):
 
 async def _edit_token(red, token, no_prompt):
     if token:
-        if not len(token) >= 50:
+        if len(token) < 50:
             print(
                 "The provided token doesn't look a valid Discord bot token."
                 " Instance's token will remain unchanged.\n"
@@ -338,13 +338,11 @@ async def run_bot(red: Red, cli_flags: Namespace) -> None:
         pkg_resources.working_set.add_entry(str(LIB_PATH))
     sys.meta_path.insert(0, SharedLibImportWarner())
 
-    if cli_flags.token:
-        token = cli_flags.token
-    else:
-        token = os.environ.get("RED_TOKEN", None)
-        if not token:
-            token = await red._config.token()
-
+    token = (
+        cli_flags.token
+        or os.environ.get("RED_TOKEN", None)
+        or await red._config.token()
+    )
     prefix = cli_flags.prefix or await red._config.prefix()
 
     if not (token and prefix):
@@ -366,11 +364,14 @@ async def run_bot(red: Red, cli_flags: Namespace) -> None:
     except discord.LoginFailure:
         log.critical("This token doesn't seem to be valid.")
         db_token = await red._config.token()
-        if db_token and not cli_flags.no_prompt:
-            if confirm("\nDo you want to reset the token?"):
-                await red._config.token.set("")
-                print("Token has been reset.")
-                sys.exit(0)
+        if (
+            db_token
+            and not cli_flags.no_prompt
+            and confirm("\nDo you want to reset the token?")
+        ):
+            await red._config.token.set("")
+            print("Token has been reset.")
+            sys.exit(0)
         sys.exit(1)
     except discord.PrivilegedIntentsRequired:
         console = rich.get_console()
@@ -408,7 +409,7 @@ def handle_early_exit_flags(cli_flags: Namespace):
         list_instances()
     elif cli_flags.version:
         print("Red V3")
-        print("Current Version: {}".format(__version__))
+        print(f"Current Version: {__version__}")
         sys.exit(0)
     elif cli_flags.debuginfo:
         early_exit_runner(cli_flags, debug_info)

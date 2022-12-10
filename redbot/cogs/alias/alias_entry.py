@@ -142,8 +142,7 @@ class AliasCache:
 
         if self._cache_enabled:
             if guild.id in self._aliases:
-                for _, alias in self._aliases[guild.id].items():
-                    aliases.append(alias)
+                aliases.extend(alias for _, alias in self._aliases[guild.id].items())
         else:
             aliases = [AliasEntry.from_json(d) for d in await self.config.guild(guild).entries()]
         return aliases
@@ -152,8 +151,7 @@ class AliasCache:
         """Returns all global specific aliases"""
         aliases: List[AliasEntry] = []
         if self._cache_enabled:
-            for _, alias in self._aliases[None].items():
-                aliases.append(alias)
+            aliases.extend(alias for _, alias in self._aliases[None].items())
         else:
             aliases = [AliasEntry.from_json(d) for d in await self.config.entries()]
         return aliases
@@ -167,10 +165,12 @@ class AliasCache:
         if self._cache_enabled:
             if alias_name in self._aliases[None]:
                 return self._aliases[None][alias_name]
-            if guild is not None:
-                if guild.id in self._aliases:
-                    if alias_name in self._aliases[guild.id]:
-                        return self._aliases[guild.id][alias_name]
+            if (
+                guild is not None
+                and guild.id in self._aliases
+                and alias_name in self._aliases[guild.id]
+            ):
+                return self._aliases[guild.id][alias_name]
         else:
             if guild:
                 server_aliases = [
@@ -187,10 +187,7 @@ class AliasCache:
 
     @staticmethod
     def format_command_for_alias(command: str) -> str:
-        # This was present in add_alias previously
-        # Made this into a separate method so as to reuse the same code in edit_alias
-        indices = findall(r"{(\d*)}", command)
-        if indices:
+        if indices := findall(r"{(\d*)}", command):
             try:
                 indices = [int(a[0]) for a in indices]
             except IndexError:
@@ -198,8 +195,7 @@ class AliasCache:
             low = min(indices)
             indices = [a - low for a in indices]
             high = max(indices)
-            gaps = set(indices).symmetric_difference(range(high + 1))
-            if gaps:
+            if gaps := set(indices).symmetric_difference(range(high + 1)):
                 raise ArgParseError(
                     _("Arguments must be sequential. Missing arguments: ")
                     + ", ".join(str(i + low) for i in gaps)
@@ -235,11 +231,7 @@ class AliasCache:
     ) -> bool:
         command = self.format_command_for_alias(command)
 
-        if global_:
-            settings = self.config
-        else:
-            settings = self.config.guild(ctx.guild)
-
+        settings = self.config if global_ else self.config.guild(ctx.guild)
         async with settings.entries() as aliases:
             for index, alias in enumerate(aliases):
                 if alias["name"] == alias_name:
@@ -259,11 +251,7 @@ class AliasCache:
     async def delete_alias(
         self, ctx: commands.Context, alias_name: str, global_: bool = False
     ) -> bool:
-        if global_:
-            settings = self.config
-        else:
-            settings = self.config.guild(ctx.guild)
-
+        settings = self.config if global_ else self.config.guild(ctx.guild)
         async with settings.entries() as aliases:
             for alias in aliases:
                 if alias["name"] == alias_name:

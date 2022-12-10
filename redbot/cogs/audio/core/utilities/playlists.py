@@ -78,7 +78,7 @@ class PlaylistUtilities(MixinMeta, metaclass=CompositeMetaClass):
             ):
                 has_perms = True
 
-        if has_perms is False:
+        if not has_perms:
             if hasattr(playlist, "name"):
                 msg = _(
                     "You do not have the permissions to manage {name} (`{id}`) [**{scope}**]."
@@ -194,7 +194,7 @@ class PlaylistUtilities(MixinMeta, metaclass=CompositeMetaClass):
                     p for p in matches.get(PlaylistScope.GLOBAL.value) if p.author == user_to_query
                 ]
             else:
-                correct_scope_matches_global = [p for p in matches.get(PlaylistScope.GLOBAL.value)]
+                correct_scope_matches_global = list(matches.get(PlaylistScope.GLOBAL.value))
 
         correct_scope_matches = [
             *correct_scope_matches_global,
@@ -203,15 +203,17 @@ class PlaylistUtilities(MixinMeta, metaclass=CompositeMetaClass):
         ]
         match_count = len(correct_scope_matches)
         if match_count > 1:
-            correct_scope_matches2 = [
-                p for p in correct_scope_matches if p.name == str(original_input).strip()
-            ]
-            if correct_scope_matches2:
+            if correct_scope_matches2 := [
+                p
+                for p in correct_scope_matches
+                if p.name == str(original_input).strip()
+            ]:
                 correct_scope_matches = correct_scope_matches2
             elif original_input.isnumeric():
                 arg = int(original_input)
-                correct_scope_matches3 = [p for p in correct_scope_matches if p.id == arg]
-                if correct_scope_matches3:
+                if correct_scope_matches3 := [
+                    p for p in correct_scope_matches if p.id == arg
+                ]:
                     correct_scope_matches = correct_scope_matches3
         match_count = len(correct_scope_matches)
         # We done all the trimming we can with the info available time to ask the user
@@ -219,13 +221,12 @@ class PlaylistUtilities(MixinMeta, metaclass=CompositeMetaClass):
             if original_input.isnumeric():
                 arg = int(original_input)
                 correct_scope_matches = [p for p in correct_scope_matches if p.id == arg]
-            if match_count > 10:
-                raise TooManyMatches(
-                    _(
-                        "{match_count} playlists match {original_input}: "
-                        "Please try to be more specific, or use the playlist ID."
-                    ).format(match_count=match_count, original_input=original_input)
-                )
+            raise TooManyMatches(
+                _(
+                    "{match_count} playlists match {original_input}: "
+                    "Please try to be more specific, or use the playlist ID."
+                ).format(match_count=match_count, original_input=original_input)
+            )
         elif match_count == 1:
             return correct_scope_matches[0], original_input, correct_scope_matches[0].scope
         elif match_count == 0:
@@ -301,7 +302,7 @@ class PlaylistUtilities(MixinMeta, metaclass=CompositeMetaClass):
             abc_names[plist_idx_start:plist_idx_end]
         ).enumerate(start=plist_idx_start):
             item_idx = i + 1
-            plist += "`{}.` {}".format(item_idx, playlist_info)
+            plist += f"`{item_idx}.` {playlist_info}"
         if scope is None:
             embed = discord.Embed(
                 colour=await ctx.embed_colour(),
@@ -378,8 +379,7 @@ class PlaylistUtilities(MixinMeta, metaclass=CompositeMetaClass):
         database_entries = []
         time_now = int(datetime.datetime.now(datetime.timezone.utc).timestamp())
         async for t in AsyncIter(track_list):
-            uri = t.get("info", {}).get("uri")
-            if uri:
+            if uri := t.get("info", {}).get("uri"):
                 t = {"loadType": "V2_COMPAT", "tracks": [t], "query": uri}
                 data = json.dumps(t)
                 if all(k in data for k in ["loadType", "playlistInfo", "isSeekable", "isStream"]):
@@ -587,15 +587,13 @@ class PlaylistUtilities(MixinMeta, metaclass=CompositeMetaClass):
         tracklist = []
 
         if query.is_spotify:
-            try:
+            with contextlib.suppress(KeyError):
                 if self.play_lock[ctx.guild.id]:
                     return await self.send_embed_msg(
                         ctx,
                         title=_("Unable To Get Tracks"),
                         description=_("Wait until the playlist has finished loading."),
                     )
-            except KeyError:
-                pass
             tracks = await self._get_spotify_tracks(ctx, query, forced=skip_cache)
 
             if isinstance(tracks, discord.Message):
@@ -664,11 +662,11 @@ class PlaylistUtilities(MixinMeta, metaclass=CompositeMetaClass):
 
             tracks = result.tracks
 
-        if not search and len(tracklist) == 0:
+        if not search and not tracklist:
             async for track in AsyncIter(tracks):
                 track_obj = self.get_track_json(player, other_track=track)
                 tracklist.append(track_obj)
-        elif len(tracklist) == 0:
+        elif not tracklist:
             track_obj = self.get_track_json(player, other_track=tracks[0])
             tracklist.append(track_obj)
         return tracklist
@@ -685,10 +683,7 @@ class PlaylistUtilities(MixinMeta, metaclass=CompositeMetaClass):
 
     async def _get_bundled_playlist_tracks(self):
         async with aiohttp.ClientSession(json_serialize=json.dumps) as session:
-            async with session.get(
-                CURRATED_DATA + f"?timestamp={int(time.time())}",
-                headers={"content-type": "application/json"},
-            ) as response:
+            async with session.get(f"{CURRATED_DATA}?timestamp={int(time.time())}", headers={"content-type": "application/json"}) as response:
                 if response.status != 200:
                     return 0, []
                 try:

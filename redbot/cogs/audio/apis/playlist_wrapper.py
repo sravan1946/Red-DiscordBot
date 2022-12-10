@@ -77,12 +77,11 @@ class PlaylistWrapper:
     def get_scope_type(scope: str) -> int:
         """Convert a scope to a numerical identifier."""
         if scope == PlaylistScope.GLOBAL.value:
-            table = 1
+            return 1
         elif scope == PlaylistScope.USER.value:
-            table = 3
+            return 3
         else:
-            table = 2
-        return table
+            return 2
 
     async def fetch(
         self, scope: str, playlist_id: int, scope_id: int
@@ -253,10 +252,10 @@ class PlaylistWrapper:
                 self.statement.upsert,
                 {
                     "scope_type": str(scope_type),
-                    "playlist_id": int(playlist_id),
-                    "playlist_name": str(playlist_name),
-                    "scope_id": int(scope_id),
-                    "author_id": int(author_id),
+                    "playlist_id": playlist_id,
+                    "playlist_name": playlist_name,
+                    "scope_id": scope_id,
+                    "author_id": author_id,
                     "playlist_url": playlist_url,
                     "tracks": json.dumps(tracks),
                 },

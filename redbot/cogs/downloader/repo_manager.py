@@ -64,10 +64,7 @@ class _RepoCheckoutCtxManager(
     ):
         self.repo = repo
         self.rev = rev
-        if exit_to_rev is None:
-            self.exit_to_rev = self.repo.commit
-        else:
-            self.exit_to_rev = exit_to_rev
+        self.exit_to_rev = self.repo.commit if exit_to_rev is None else exit_to_rev
         self.force_checkout = force_checkout
         self.coro = repo._checkout(self.rev, force_checkout=self.force_checkout)
 
@@ -337,8 +334,7 @@ class Repo(RepoJSONMixin):
                 f"Git log failed for repo at path: {self.folder_path}", git_command
             )
 
-        commit = p.stdout.decode(**DECODE_PARAMS).strip()
-        if commit:
+        if commit := p.stdout.decode(**DECODE_PARAMS).strip():
             async with self.checkout(f"{commit}~"):
                 return discord.utils.get(self.available_modules, name=module_name)
         return None
@@ -488,10 +484,10 @@ class Repo(RepoJSONMixin):
                     break
             else:
                 raise errors.UnknownRevision(f"Revision {rev} cannot be found.", git_command)
-            candidates = []
-            for match in self.AMBIGUOUS_ERROR_REGEX.finditer(stderr, pos):
-                candidates.append(Candidate(match["rev"], match["type"], match["desc"]))
-            if candidates:
+            if candidates := [
+                Candidate(match["rev"], match["type"], match["desc"])
+                for match in self.AMBIGUOUS_ERROR_REGEX.finditer(stderr, pos)
+            ]:
                 raise errors.AmbiguousRevision(
                     f"Short SHA1 {rev} is ambiguous.", git_command, candidates
                 )
@@ -561,9 +557,9 @@ class Repo(RepoJSONMixin):
                 self._executor,
                 functools.partial(sp_run, *args, stdout=PIPE, stderr=PIPE, **kwargs),
             )
-            # logging can't use surrogateescape
-            stderr = p.stderr.decode(encoding="utf-8", errors="replace").strip()
-            if stderr:
+            if stderr := p.stderr.decode(
+                encoding="utf-8", errors="replace"
+            ).strip():
                 if debug_only or p.returncode in valid_exit_codes:
                     log.debug(stderr)
                 else:
@@ -893,7 +889,7 @@ class Repo(RepoJSONMixin):
         """
 
         if libraries:
-            if not all([i in self.available_libraries for i in libraries]):
+            if any(i not in self.available_libraries for i in libraries):
                 raise ValueError("Some given libraries are not available in this repo.")
         else:
             libraries = self.available_libraries
@@ -968,9 +964,7 @@ class Repo(RepoJSONMixin):
 
         if p.returncode != 0:
             log.error(
-                "Something went wrong when installing"
-                " the following requirements:"
-                " {}".format(", ".join(requirements))
+                f'Something went wrong when installing the following requirements: {", ".join(requirements)}'
             )
             return False
         return True
@@ -983,7 +977,9 @@ class Repo(RepoJSONMixin):
         """
         # noinspection PyTypeChecker
         return tuple(
-            [m for m in self.available_modules if m.type == InstallableType.COG and not m.disabled]
+            m
+            for m in self.available_modules
+            if m.type == InstallableType.COG and not m.disabled
         )
 
     @property
@@ -993,14 +989,16 @@ class Repo(RepoJSONMixin):
         """
         # noinspection PyTypeChecker
         return tuple(
-            [m for m in self.available_modules if m.type == InstallableType.SHARED_LIBRARY]
+            m
+            for m in self.available_modules
+            if m.type == InstallableType.SHARED_LIBRARY
         )
 
     @classmethod
     async def from_folder(cls, folder: Path, branch: str = "") -> Repo:
         repo = cls(name=folder.stem, url="", branch=branch, commit="", folder_path=folder)
         repo.url = await repo.current_url()
-        if branch == "":
+        if not branch:
             repo.branch = await repo.current_branch()
             repo._update_available_modules()
         else:
@@ -1234,8 +1232,7 @@ class RepoManager:
 
     def _parse_url(self, url: str, branch: Optional[str]) -> Tuple[str, Optional[str]]:
         if self.GITHUB_OR_GITLAB_RE.match(url):
-            tree_url_match = self.TREE_URL_RE.search(url)
-            if tree_url_match:
+            if tree_url_match := self.TREE_URL_RE.search(url):
                 url = url[: tree_url_match.start("tree")]
                 if branch is None:
                     branch = tree_url_match["branch"]

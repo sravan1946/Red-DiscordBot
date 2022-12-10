@@ -56,17 +56,15 @@ class YouTubeWrapper:
             "type": "video",
         }
         async with self.session.request("GET", SEARCH_ENDPOINT, params=params) as r:
-            if r.status == 400:
-                if r.reason == "Bad Request":
-                    raise YouTubeApiError(
-                        _(
-                            "Your YouTube Data API token is invalid.\n"
-                            "Check the YouTube API key again and follow the instructions "
-                            "at `{prefix}audioset youtubeapi`."
-                        )
+            if r.status == 400 and r.reason == "Bad Request":
+                raise YouTubeApiError(
+                    _(
+                        "Your YouTube Data API token is invalid.\n"
+                        "Check the YouTube API key again and follow the instructions "
+                        "at `{prefix}audioset youtubeapi`."
                     )
-                return None
-            elif r.status == 404:
+                )
+            elif r.status in [400, 404]:
                 return None
             elif r.status == 403:
                 if r.reason in ["Forbidden", "quotaExceeded"]:
@@ -81,8 +79,11 @@ class YouTubeWrapper:
                 return None
             else:
                 search_response = await r.json(loads=json.loads)
-        for search_result in search_response.get("items", []):
-            if search_result["id"]["kind"] == "youtube#video":
-                return f"https://www.youtube.com/watch?v={search_result['id']['videoId']}"
-
-        return None
+        return next(
+            (
+                f"https://www.youtube.com/watch?v={search_result['id']['videoId']}"
+                for search_result in search_response.get("items", [])
+                if search_result["id"]["kind"] == "youtube#video"
+            ),
+            None,
+        )

@@ -160,13 +160,9 @@ class Cleanup(commands.Cog):
         resolved = reference.resolved
         if resolved and isinstance(resolved, discord.Message):
             message = resolved
-        elif message := reference.cached_message:
-            pass
-        else:
-            try:
+        elif not (message := reference.cached_message):
+            with contextlib.suppress(discord.NotFound):
                 message = await channel.fetch_message(reference.message_id)
-            except discord.NotFound:
-                pass
         return message
 
     @commands.group()
@@ -204,10 +200,7 @@ class Cleanup(commands.Cog):
                 return
 
         def check(m):
-            if text in m.content:
-                return True
-            else:
-                return False
+            return text in m.content
 
         to_delete = await self.get_messages_for_deletion(
             channel=channel,
@@ -270,10 +263,7 @@ class Cleanup(commands.Cog):
                 return
 
         def check(m):
-            if m.author.id == _id:
-                return True
-            else:
-                return False
+            return m.author.id == _id
 
         to_delete = await self.get_messages_for_deletion(
             channel=channel,
@@ -494,9 +484,7 @@ class Cleanup(commands.Cog):
         )
         to_delete.append(ctx.message)
 
-        reason = "{}({}) deleted {} messages in channel #{}.".format(
-            author.name, author.id, len(to_delete), channel.name
-        )
+        reason = f"{author.name}({author.id}) deleted {len(to_delete)} messages in channel #{channel.name}."
         log.info(reason)
 
         await mass_purge(to_delete, channel, reason=reason)
@@ -543,9 +531,12 @@ class Cleanup(commands.Cog):
             is_cc = lambda name: False
         alias_cog = self.bot.get_cog("Alias")
         if alias_cog is not None:
-            alias_names: Set[str] = set(
+            alias_names: Set[str] = {
                 a.name for a in await alias_cog._aliases.get_global_aliases()
-            ) | set(a.name for a in await alias_cog._aliases.get_guild_aliases(ctx.guild))
+            } | {
+                a.name
+                for a in await alias_cog._aliases.get_guild_aliases(ctx.guild)
+            }
             is_alias = lambda name: name in alias_names
         else:
             is_alias = lambda name: False
@@ -655,11 +646,7 @@ class Cleanup(commands.Cog):
         if can_mass_purge:
             to_delete.append(ctx.message)
 
-        if ctx.guild:
-            channel_name = "channel " + channel.name
-        else:
-            channel_name = str(channel)
-
+        channel_name = f"channel {channel.name}" if ctx.guild else str(channel)
         reason = (
             "{}({}) deleted {} messages "
             "sent by the bot in {}."

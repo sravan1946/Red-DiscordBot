@@ -84,10 +84,9 @@ class StartUpTasks(MixinMeta, metaclass=CompositeMetaClass):
         metadata = {}
         all_guilds = await self.config.all_guilds()
         async for guild_id, guild_data in AsyncIter(all_guilds.items(), steps=100):
-            if guild_data["auto_play"]:
-                if guild_data["currently_auto_playing_in"]:
-                    notify_channel, vc_id = guild_data["currently_auto_playing_in"]
-                    metadata[guild_id] = (notify_channel, vc_id)
+            if guild_data["auto_play"] and guild_data["currently_auto_playing_in"]:
+                notify_channel, vc_id = guild_data["currently_auto_playing_in"]
+                metadata[guild_id] = (notify_channel, vc_id)
         if self.lavalink_connection_aborted:
             log.warning("Aborting player restore due to Lavalink connection being aborted.")
             return
@@ -274,8 +273,9 @@ class StartUpTasks(MixinMeta, metaclass=CompositeMetaClass):
                             )
                         return
                     except TrackEnqueueError:
-                        notify_channel = guild.get_channel_or_thread(notify_channel)
-                        if notify_channel:
+                        if notify_channel := guild.get_channel_or_thread(
+                            notify_channel
+                        ):
                             await self.send_embed_msg(
                                 notify_channel,
                                 title=_("Unable to Get Track"),

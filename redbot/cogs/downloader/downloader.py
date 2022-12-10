@@ -628,7 +628,7 @@ class Downloader(commands.Cog):
             else:
                 joined = _("Installed Repo:\n\n")
             for repo in sorted_repos:
-                joined += "+ {}: {}\n".format(repo.name, repo.short or "")
+                joined += f'+ {repo.name}: {repo.short or ""}\n'
 
         for page in pagify(joined, ["\n"], shorten_by=16):
             await ctx.send(box(page.lstrip(" "), lang="diff"))
@@ -678,18 +678,15 @@ class Downloader(commands.Cog):
             updated: Set[str]
 
             updated_repos, failed = await self._repo_manager.update_repos(repos)
-            updated = {repo.name for repo in updated_repos}
-
-            if updated:
+            if updated := {repo.name for repo in updated_repos}:
                 message = _("Repo update completed successfully.")
                 message += _("\nUpdated: ") + humanize_list(tuple(map(inline, updated)))
             elif not repos:
                 message = _("All installed repos are already up to date.")
+            elif len(updated_repos) > 1:
+                message = _("These repos are already up to date.")
             else:
-                if len(updated_repos) > 1:
-                    message = _("These repos are already up to date.")
-                else:
-                    message = _("This repo is already up to date.")
+                message = _("This repo is already up to date.")
 
             if failed:
                 message += "\n" + self.format_failed_repos(failed)
@@ -1057,10 +1054,10 @@ class Downloader(commands.Cog):
     async def _cog_listpinned(self, ctx: commands.Context):
         """List currently pinned cogs."""
         installed = await self.installed_cogs()
-        pinned_list = sorted(
-            [cog for cog in installed if cog.pinned], key=lambda cog: cog.name.lower()
-        )
-        if pinned_list:
+        if pinned_list := sorted(
+            [cog for cog in installed if cog.pinned],
+            key=lambda cog: cog.name.lower(),
+        ):
             message = "\n".join(
                 f"({inline(cog.commit[:7] or _('unknown'))}) {cog.name}" for cog in pinned_list
             )
@@ -1107,7 +1104,7 @@ class Downloader(commands.Cog):
                     if len(libnames) > 1
                     else _("\nThis shared library can be updated: ")
                 ) + humanize_list(tuple(map(inline, libnames)))
-            if not (cogs_to_update or libs_to_update) and filter_message:
+            if not cogs_to_update and not libs_to_update and filter_message:
                 message += _("No cogs can be updated.")
             message += filter_message
 
@@ -1269,23 +1266,22 @@ class Downloader(commands.Cog):
                     updated_cognames, message = await self._update_cogs_and_libs(
                         ctx, cogs_to_update, libs_to_update, current_cog_versions=cogs_to_check
                     )
+                elif repos:
+                    message += _("Cogs from provided repos are already up to date.")
+                elif repo:
+                    message += (
+                        _(
+                            "Provided cogs are already up to date with this revision."
+                        )
+                        if cogs
+                        else _(
+                            "Cogs from provided repo are already up to date with this revision."
+                        )
+                    )
+                elif cogs:
+                    message += _("Provided cogs are already up to date.")
                 else:
-                    if repos:
-                        message += _("Cogs from provided repos are already up to date.")
-                    elif repo:
-                        if cogs:
-                            message += _(
-                                "Provided cogs are already up to date with this revision."
-                            )
-                        else:
-                            message += _(
-                                "Cogs from provided repo are already up to date with this revision."
-                            )
-                    else:
-                        if cogs:
-                            message += _("Provided cogs are already up to date.")
-                        else:
-                            message += _("All installed cogs are already up to date.")
+                    message += _("All installed cogs are already up to date.")
                 if repo is not None:
                     await repo.checkout(repo.branch)
                 if pinned_cogs:
@@ -1300,12 +1296,11 @@ class Downloader(commands.Cog):
         if failed_repos:
             message += "\n" + self.format_failed_repos(failed_repos)
 
-        repos_with_libs = {
+        if repos_with_libs := {
             inline(module.repo.name)
             for module in cogs_to_update + libs_to_update
             if module.repo.available_libraries
-        }
-        if repos_with_libs:
+        }:
             message += DEPRECATION_NOTICE.format(repo_list=humanize_list(list(repos_with_libs)))
 
         await self.send_pagified(ctx, message)
@@ -1327,7 +1322,7 @@ class Downloader(commands.Cog):
         all_installed_cogs = await self.installed_cogs()
         installed_cogs_in_repo = [cog for cog in all_installed_cogs if cog.repo_name == repo.name]
         installed_str = "\n".join(
-            "- {}{}".format(i.name, ": {}".format(i.short) if i.short else "")
+            f'- {i.name}{f": {i.short}" if i.short else ""}'
             for i in installed_cogs_in_repo
         )
 
@@ -1340,7 +1335,7 @@ class Downloader(commands.Cog):
             cog for cog in repo.available_cogs if not (cog.hidden or cog in installed_cogs_in_repo)
         ]
         available_str = "\n".join(
-            "+ {}{}".format(cog.name, ": {}".format(cog.short) if cog.short else "")
+            f'+ {cog.name}{f": {cog.short}" if cog.short else ""}'
             for cog in available_cogs
         )
 
@@ -1412,10 +1407,14 @@ class Downloader(commands.Cog):
             :code:`(False, None)`.
 
         """
-        for installed_cog in await self.installed_cogs():
-            if installed_cog.name == cog_name:
-                return True, installed_cog
-        return False, None
+        return next(
+            (
+                (True, installed_cog)
+                for installed_cog in await self.installed_cogs()
+                if installed_cog.name == cog_name
+            ),
+            (False, None),
+        )
 
     async def _filter_incorrect_cogs_by_names(
         self, repo: Repo, cog_names: Iterable[str]
@@ -1786,7 +1785,7 @@ class Downloader(commands.Cog):
             if len(failed) > 1
             else _("Failed to update the following repository:")
         )
-        message += " " + humanize_list(tuple(map(inline, failed))) + "\n"
+        message += f" {humanize_list(tuple(map(inline, failed)))}" + "\n"
         message += _(
             "The repository's branch might have been removed or"
             " the repository is no longer accessible at set url."

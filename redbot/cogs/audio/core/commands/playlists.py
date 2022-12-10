@@ -102,8 +102,12 @@ class PlaylistCommands(MixinMeta, metaclass=CompositeMetaClass):
             return await self.send_embed_msg(
                 ctx,
                 title=_("Playlists Are Not Available"),
-                description=_("The playlist section of Audio is currently unavailable"),
-                footer=None if not await self.bot.is_owner(ctx.author) else _("Check your logs."),
+                description=_(
+                    "The playlist section of Audio is currently unavailable"
+                ),
+                footer=_("Check your logs.")
+                if await self.bot.is_owner(ctx.author)
+                else None,
             )
         if scope_data is None:
             scope_data = [None, ctx.author, ctx.guild, False]
@@ -263,8 +267,12 @@ class PlaylistCommands(MixinMeta, metaclass=CompositeMetaClass):
             return await self.send_embed_msg(
                 ctx,
                 title=_("Playlists Are Not Available"),
-                description=_("The playlist section of Audio is currently unavailable"),
-                footer=None if not await self.bot.is_owner(ctx.author) else _("Check your logs."),
+                description=_(
+                    "The playlist section of Audio is currently unavailable"
+                ),
+                footer=_("Check your logs.")
+                if await self.bot.is_owner(ctx.author)
+                else None,
             )
         if scope_data is None:
             scope_data = [
@@ -390,8 +398,12 @@ class PlaylistCommands(MixinMeta, metaclass=CompositeMetaClass):
             return await self.send_embed_msg(
                 ctx,
                 title=_("Playlists Are Not Available"),
-                description=_("The playlist section of Audio is currently unavailable"),
-                footer=None if not await self.bot.is_owner(ctx.author) else _("Check your logs."),
+                description=_(
+                    "The playlist section of Audio is currently unavailable"
+                ),
+                footer=_("Check your logs.")
+                if await self.bot.is_owner(ctx.author)
+                else None,
             )
         if scope_data is None:
             scope_data = [None, ctx.author, ctx.guild, False]
@@ -467,8 +479,12 @@ class PlaylistCommands(MixinMeta, metaclass=CompositeMetaClass):
             return await self.send_embed_msg(
                 ctx,
                 title=_("Playlists Are Not Available"),
-                description=_("The playlist section of Audio is currently unavailable"),
-                footer=None if not await self.bot.is_owner(ctx.author) else _("Check your logs."),
+                description=_(
+                    "The playlist section of Audio is currently unavailable"
+                ),
+                footer=_("Check your logs.")
+                if await self.bot.is_owner(ctx.author)
+                else None,
             )
         if scope_data is None:
             scope_data = [None, ctx.author, ctx.guild, False]
@@ -555,8 +571,12 @@ class PlaylistCommands(MixinMeta, metaclass=CompositeMetaClass):
             return await self.send_embed_msg(
                 ctx,
                 title=_("Playlists Are Not Available"),
-                description=_("The playlist section of Audio is currently unavailable"),
-                footer=None if not await self.bot.is_owner(ctx.author) else _("Check your logs."),
+                description=_(
+                    "The playlist section of Audio is currently unavailable"
+                ),
+                footer=_("Check your logs.")
+                if await self.bot.is_owner(ctx.author)
+                else None,
             )
         async with ctx.typing():
             if scope_data is None:
@@ -591,7 +611,9 @@ class PlaylistCommands(MixinMeta, metaclass=CompositeMetaClass):
             unique_tracks = set()
             unique_tracks_add = unique_tracks.add
             track_objects = [
-                x for x in track_objects if not (x in unique_tracks or unique_tracks_add(x))
+                x
+                for x in track_objects
+                if x not in unique_tracks and not unique_tracks_add(x)
             ]
 
             tracklist = []
@@ -599,14 +621,10 @@ class PlaylistCommands(MixinMeta, metaclass=CompositeMetaClass):
                 track_keys = track._info.keys()
                 track_values = track._info.values()
                 track_id = track.track_identifier
-                track_info = {}
-                for k, v in zip(track_keys, track_values):
-                    track_info[k] = v
+                track_info = dict(zip(track_keys, track_values))
                 keys = ["track", "info"]
                 values = [track_id, track_info]
-                track_obj = {}
-                for key, value in zip(keys, values):
-                    track_obj[key] = value
+                track_obj = dict(zip(keys, values))
                 tracklist.append(track_obj)
 
         final_count = len(tracklist)
@@ -688,8 +706,12 @@ class PlaylistCommands(MixinMeta, metaclass=CompositeMetaClass):
             return await self.send_embed_msg(
                 ctx,
                 title=_("Playlists Are Not Available"),
-                description=_("The playlist section of Audio is currently unavailable"),
-                footer=None if not await self.bot.is_owner(ctx.author) else _("Check your logs."),
+                description=_(
+                    "The playlist section of Audio is currently unavailable"
+                ),
+                footer=_("Check your logs.")
+                if await self.bot.is_owner(ctx.author)
+                else None,
             )
         if scope_data is None:
             scope_data = [None, ctx.author, ctx.guild, False]
@@ -819,8 +841,12 @@ class PlaylistCommands(MixinMeta, metaclass=CompositeMetaClass):
             return await self.send_embed_msg(
                 ctx,
                 title=_("Playlists Are Not Available"),
-                description=_("The playlist section of Audio is currently unavailable"),
-                footer=None if not await self.bot.is_owner(ctx.author) else _("Check your logs."),
+                description=_(
+                    "The playlist section of Audio is currently unavailable"
+                ),
+                footer=_("Check your logs.")
+                if await self.bot.is_owner(ctx.author)
+                else None,
             )
         if scope_data is None:
             scope_data = [None, ctx.author, ctx.guild, False]
@@ -857,34 +883,31 @@ class PlaylistCommands(MixinMeta, metaclass=CompositeMetaClass):
                     )
                     if query.is_local:
                         if track["info"]["title"] != "Unknown title":
-                            msg += "`{}.` **{} - {}**\n{}{}\n".format(
-                                track_idx,
-                                track["info"]["author"],
-                                track["info"]["title"],
-                                spaces,
-                                query.to_string_user(),
-                            )
+                            msg += f'`{track_idx}.` **{track["info"]["author"]} - {track["info"]["title"]}**\n{spaces}{query.to_string_user()}\n'
                         else:
-                            msg += "`{}.` {}\n".format(track_idx, query.to_string_user())
+                            msg += f"`{track_idx}.` {query.to_string_user()}\n"
                     else:
-                        msg += "`{}.` **[{}]({})**\n".format(
-                            track_idx, track["info"]["title"], track["info"]["uri"]
-                        )
+                        msg += f'`{track_idx}.` **[{track["info"]["title"]}]({track["info"]["uri"]})**\n'
 
             else:
                 msg = "No tracks."
 
-            if not playlist.url:
-                embed_title = _(
-                    "Playlist info for {playlist_name} (`{id}`) [**{scope}**]:\n"
-                ).format(playlist_name=playlist.name, id=playlist.id, scope=scope_name)
-            else:
-                embed_title = _(
+            embed_title = (
+                _(
                     "Playlist info for {playlist_name} (`{id}`) [**{scope}**]:\nURL: {url}"
                 ).format(
-                    playlist_name=playlist.name, url=playlist.url, id=playlist.id, scope=scope_name
+                    playlist_name=playlist.name,
+                    url=playlist.url,
+                    id=playlist.id,
+                    scope=scope_name,
                 )
-
+                if playlist.url
+                else _(
+                    "Playlist info for {playlist_name} (`{id}`) [**{scope}**]:\n"
+                ).format(
+                    playlist_name=playlist.name, id=playlist.id, scope=scope_name
+                )
+            )
             page_list = []
             pages = list(pagify(msg, delims=["\n"], page_length=2000))
             total_pages = len(pages)
@@ -940,8 +963,12 @@ class PlaylistCommands(MixinMeta, metaclass=CompositeMetaClass):
             return await self.send_embed_msg(
                 ctx,
                 title=_("Playlists Are Not Available"),
-                description=_("The playlist section of Audio is currently unavailable"),
-                footer=None if not await self.bot.is_owner(ctx.author) else _("Check your logs."),
+                description=_(
+                    "The playlist section of Audio is currently unavailable"
+                ),
+                footer=_("Check your logs.")
+                if await self.bot.is_owner(ctx.author)
+                else None,
             )
         if scope_data is None:
             scope_data = [None, ctx.author, ctx.guild, False]
@@ -1093,8 +1120,12 @@ class PlaylistCommands(MixinMeta, metaclass=CompositeMetaClass):
             return await self.send_embed_msg(
                 ctx,
                 title=_("Playlists Are Not Available"),
-                description=_("The playlist section of Audio is currently unavailable"),
-                footer=None if not await self.bot.is_owner(ctx.author) else _("Check your logs."),
+                description=_(
+                    "The playlist section of Audio is currently unavailable"
+                ),
+                footer=_("Check your logs.")
+                if await self.bot.is_owner(ctx.author)
+                else None,
             )
         async with ctx.typing():
             if scope_data is None:
@@ -1127,9 +1158,8 @@ class PlaylistCommands(MixinMeta, metaclass=CompositeMetaClass):
             if not player.queue:
                 ctx.command.reset_cooldown(ctx)
                 return await self.send_embed_msg(ctx, title=_("There's nothing in the queue."))
-            tracklist = []
             np_song = self.get_track_json(player, "np")
-            tracklist.append(np_song)
+            tracklist = [np_song]
             queue_length = len(player.queue)
             to_add = player.queue
             not_added = 0
@@ -1201,8 +1231,12 @@ class PlaylistCommands(MixinMeta, metaclass=CompositeMetaClass):
             return await self.send_embed_msg(
                 ctx,
                 title=_("Playlists Are Not Available"),
-                description=_("The playlist section of Audio is currently unavailable"),
-                footer=None if not await self.bot.is_owner(ctx.author) else _("Check your logs."),
+                description=_(
+                    "The playlist section of Audio is currently unavailable"
+                ),
+                footer=_("Check your logs.")
+                if await self.bot.is_owner(ctx.author)
+                else None,
             )
         if scope_data is None:
             scope_data = [None, ctx.author, ctx.guild, False]
@@ -1317,8 +1351,12 @@ class PlaylistCommands(MixinMeta, metaclass=CompositeMetaClass):
             return await self.send_embed_msg(
                 ctx,
                 title=_("Playlists Are Not Available"),
-                description=_("The playlist section of Audio is currently unavailable"),
-                footer=None if not await self.bot.is_owner(ctx.author) else _("Check your logs."),
+                description=_(
+                    "The playlist section of Audio is currently unavailable"
+                ),
+                footer=_("Check your logs.")
+                if await self.bot.is_owner(ctx.author)
+                else None,
             )
         if scope_data is None:
             scope_data = [None, ctx.author, ctx.guild, False]
@@ -1441,8 +1479,12 @@ class PlaylistCommands(MixinMeta, metaclass=CompositeMetaClass):
             return await self.send_embed_msg(
                 ctx,
                 title=_("Playlists Are Not Available"),
-                description=_("The playlist section of Audio is currently unavailable"),
-                footer=None if not await self.bot.is_owner(ctx.author) else _("Check your logs."),
+                description=_(
+                    "The playlist section of Audio is currently unavailable"
+                ),
+                footer=_("Check your logs.")
+                if await self.bot.is_owner(ctx.author)
+                else None,
             )
         if scope_data is None:
             scope_data = [None, ctx.author, ctx.guild, False]

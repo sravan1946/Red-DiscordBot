@@ -98,10 +98,12 @@ class AudioSetCommands(MixinMeta, metaclass=CompositeMetaClass):
             else:
                 pages.append(box(text, lang="ini"))
         embed_colour = await ctx.embed_colour()
-        pages = list(
-            discord.Embed(title=_("Global Whitelist"), description=page, colour=embed_colour)
+        pages = [
+            discord.Embed(
+                title=_("Global Whitelist"), description=page, colour=embed_colour
+            )
             for page in pages
-        )
+        ]
         await menu(ctx, pages)
 
     @command_audioset_perms_global_whitelist.command(name="clear")
@@ -131,16 +133,19 @@ class AudioSetCommands(MixinMeta, metaclass=CompositeMetaClass):
                 exists = False
             else:
                 whitelist.remove(keyword)
-        if not exists:
-            return await self.send_embed_msg(ctx, title=_("Keyword already in the whitelist."))
-        else:
-            return await self.send_embed_msg(
+        return (
+            await self.send_embed_msg(
                 ctx,
                 title=_("Whitelist Modified"),
-                description=_("Removed `{whitelisted}` from the whitelist.").format(
-                    whitelisted=keyword
-                ),
+                description=_(
+                    "Removed `{whitelisted}` from the whitelist."
+                ).format(whitelisted=keyword),
             )
+            if exists
+            else await self.send_embed_msg(
+                ctx, title=_("Keyword already in the whitelist.")
+            )
+        )
 
     @command_audioset_perms_global.group(name="blacklist")
     async def command_audioset_perms_global_blacklist(self, ctx: commands.Context):
@@ -192,10 +197,12 @@ class AudioSetCommands(MixinMeta, metaclass=CompositeMetaClass):
             else:
                 pages.append(box(text, lang="ini"))
         embed_colour = await ctx.embed_colour()
-        pages = list(
-            discord.Embed(title=_("Global Blacklist"), description=page, colour=embed_colour)
+        pages = [
+            discord.Embed(
+                title=_("Global Blacklist"), description=page, colour=embed_colour
+            )
             for page in pages
-        )
+        ]
         await menu(ctx, pages)
 
     @command_audioset_perms_global_blacklist.command(name="clear")
@@ -225,16 +232,19 @@ class AudioSetCommands(MixinMeta, metaclass=CompositeMetaClass):
                 exists = False
             else:
                 blacklist.remove(keyword)
-        if not exists:
-            return await self.send_embed_msg(ctx, title=_("Keyword is not in the blacklist."))
-        else:
-            return await self.send_embed_msg(
+        return (
+            await self.send_embed_msg(
                 ctx,
                 title=_("Blacklist Modified"),
-                description=_("Removed `{blacklisted}` from the blacklist.").format(
-                    blacklisted=keyword
-                ),
+                description=_(
+                    "Removed `{blacklisted}` from the blacklist."
+                ).format(blacklisted=keyword),
             )
+            if exists
+            else await self.send_embed_msg(
+                ctx, title=_("Keyword is not in the blacklist.")
+            )
+        )
 
     @command_audioset_perms.group(name="whitelist")
     @commands.guild_only()
@@ -288,10 +298,12 @@ class AudioSetCommands(MixinMeta, metaclass=CompositeMetaClass):
             else:
                 pages.append(box(text, lang="ini"))
         embed_colour = await ctx.embed_colour()
-        pages = list(
-            discord.Embed(title=_("Whitelist"), description=page, colour=embed_colour)
+        pages = [
+            discord.Embed(
+                title=_("Whitelist"), description=page, colour=embed_colour
+            )
             for page in pages
-        )
+        ]
         await menu(ctx, pages)
 
     @command_audioset_perms_whitelist.command(name="clear")
@@ -321,16 +333,19 @@ class AudioSetCommands(MixinMeta, metaclass=CompositeMetaClass):
                 exists = False
             else:
                 whitelist.remove(keyword)
-        if not exists:
-            return await self.send_embed_msg(ctx, title=_("Keyword already in the whitelist."))
-        else:
-            return await self.send_embed_msg(
+        return (
+            await self.send_embed_msg(
                 ctx,
                 title=_("Whitelist Modified"),
-                description=_("Removed `{whitelisted}` from the whitelist.").format(
-                    whitelisted=keyword
-                ),
+                description=_(
+                    "Removed `{whitelisted}` from the whitelist."
+                ).format(whitelisted=keyword),
             )
+            if exists
+            else await self.send_embed_msg(
+                ctx, title=_("Keyword already in the whitelist.")
+            )
+        )
 
     @command_audioset_perms.group(name="blacklist")
     @commands.guild_only()
@@ -381,10 +396,12 @@ class AudioSetCommands(MixinMeta, metaclass=CompositeMetaClass):
             else:
                 pages.append(box(text, lang="ini"))
         embed_colour = await ctx.embed_colour()
-        pages = list(
-            discord.Embed(title=_("Blacklist"), description=page, colour=embed_colour)
+        pages = [
+            discord.Embed(
+                title=_("Blacklist"), description=page, colour=embed_colour
+            )
             for page in pages
-        )
+        ]
         await menu(ctx, pages)
 
     @command_audioset_perms_blacklist.command(name="clear")
@@ -414,16 +431,19 @@ class AudioSetCommands(MixinMeta, metaclass=CompositeMetaClass):
                 exists = False
             else:
                 blacklist.remove(keyword)
-        if not exists:
-            return await self.send_embed_msg(ctx, title=_("Keyword is not in the blacklist."))
-        else:
-            return await self.send_embed_msg(
+        return (
+            await self.send_embed_msg(
                 ctx,
                 title=_("Blacklist Modified"),
-                description=_("Removed `{blacklisted}` from the blacklist.").format(
-                    blacklisted=keyword
-                ),
+                description=_(
+                    "Removed `{blacklisted}` from the blacklist."
+                ).format(blacklisted=keyword),
             )
+            if exists
+            else await self.send_embed_msg(
+                ctx, title=_("Keyword is not in the blacklist.")
+            )
+        )
 
     @command_audioset.group(name="autoplay")
     @commands.guild_only()
@@ -438,7 +458,7 @@ class AudioSetCommands(MixinMeta, metaclass=CompositeMetaClass):
         repeat = await self.config.guild(ctx.guild).repeat()
         disconnect = await self.config.guild(ctx.guild).disconnect()
         msg = _("Auto-play when queue ends: {true_or_false}.").format(
-            true_or_false=_("Enabled") if not autoplay else _("Disabled")
+            true_or_false=_("Disabled") if autoplay else _("Enabled")
         )
         await self.config.guild(ctx.guild).auto_play.set(not autoplay)
         if autoplay is not True and repeat is True:
@@ -495,8 +515,12 @@ class AudioSetCommands(MixinMeta, metaclass=CompositeMetaClass):
             return await self.send_embed_msg(
                 ctx,
                 title=_("Playlists Are Not Available"),
-                description=_("The playlist section of Audio is currently unavailable"),
-                footer=None if not await self.bot.is_owner(ctx.author) else _("Check your logs."),
+                description=_(
+                    "The playlist section of Audio is currently unavailable"
+                ),
+                footer=_("Check your logs.")
+                if await self.bot.is_owner(ctx.author)
+                else None,
             )
         if scope_data is None:
             scope_data = [None, ctx.author, ctx.guild, False]
@@ -586,7 +610,7 @@ class AudioSetCommands(MixinMeta, metaclass=CompositeMetaClass):
             ctx,
             title=_("Setting Changed"),
             description=_("Global daily queues: {true_or_false}.").format(
-                true_or_false=_("Enabled") if not daily_playlists else _("Disabled")
+                true_or_false=_("Disabled") if daily_playlists else _("Enabled")
             ),
         )
 
@@ -607,7 +631,7 @@ class AudioSetCommands(MixinMeta, metaclass=CompositeMetaClass):
             ctx,
             title=_("Setting Changed"),
             description=_("Daily queues: {true_or_false}.").format(
-                true_or_false=_("Enabled") if not daily_playlists else _("Disabled")
+                true_or_false=_("Disabled") if daily_playlists else _("Enabled")
             ),
         )
 
@@ -624,7 +648,7 @@ class AudioSetCommands(MixinMeta, metaclass=CompositeMetaClass):
         autoplay = await self.config.guild(ctx.guild).auto_play()
         msg = ""
         msg += _("Auto-disconnection at queue end: {true_or_false}.").format(
-            true_or_false=_("Enabled") if not disconnect else _("Disabled")
+            true_or_false=_("Disabled") if disconnect else _("Enabled")
         )
         if disconnect is not True and autoplay is True:
             msg += _("\nAuto-play has been disabled.")
@@ -672,7 +696,7 @@ class AudioSetCommands(MixinMeta, metaclass=CompositeMetaClass):
             ctx,
             title=_("Setting Changed"),
             description=_("DJ role: {true_or_false}.").format(
-                true_or_false=_("Enabled") if not dj_enabled else _("Disabled")
+                true_or_false=_("Disabled") if dj_enabled else _("Enabled")
             ),
         )
 
@@ -747,7 +771,7 @@ class AudioSetCommands(MixinMeta, metaclass=CompositeMetaClass):
             ctx,
             title=_("Setting Changed"),
             description=_("Prefer tracks with lyrics: {true_or_false}.").format(
-                true_or_false=_("Enabled") if not prefer_lyrics else _("Disabled")
+                true_or_false=_("Disabled") if prefer_lyrics else _("Enabled")
             ),
         )
 
@@ -895,7 +919,7 @@ class AudioSetCommands(MixinMeta, metaclass=CompositeMetaClass):
             ctx,
             title=_("Setting Changed"),
             description=_("Notify mode: {true_or_false}.").format(
-                true_or_false=_("Enabled") if not notify else _("Disabled")
+                true_or_false=_("Disabled") if notify else _("Enabled")
             ),
         )
 
@@ -910,7 +934,7 @@ class AudioSetCommands(MixinMeta, metaclass=CompositeMetaClass):
             ctx,
             title=_("Setting Changed"),
             description=_("Auto Deafen: {true_or_false}.").format(
-                true_or_false=_("Enabled") if not auto_deafen else _("Disabled")
+                true_or_false=_("Disabled") if auto_deafen else _("Enabled")
             ),
         )
 
@@ -930,7 +954,7 @@ class AudioSetCommands(MixinMeta, metaclass=CompositeMetaClass):
             ctx,
             title=_("Setting Changed"),
             description=_("Commercial links only: {true_or_false}.").format(
-                true_or_false=_("Enabled") if not restrict else _("Disabled")
+                true_or_false=_("Disabled") if restrict else _("Enabled")
             ),
         )
 
@@ -1089,10 +1113,16 @@ class AudioSetCommands(MixinMeta, metaclass=CompositeMetaClass):
                 + _("Local Youtube cache:    [{youtube_status}]\n")
                 + _("Local Lavalink cache:   [{lavalink_status}]\n")
             ).format(
-                max_age=str(await self.config.cache_age()) + " " + _("days"),
-                spotify_status=_("Enabled") if has_spotify_cache else _("Disabled"),
-                youtube_status=_("Enabled") if has_youtube_cache else _("Disabled"),
-                lavalink_status=_("Enabled") if has_lavalink_cache else _("Disabled"),
+                max_age=f"{str(await self.config.cache_age())} " + _("days"),
+                spotify_status=_("Enabled")
+                if has_spotify_cache
+                else _("Disabled"),
+                youtube_status=_("Enabled")
+                if has_youtube_cache
+                else _("Disabled"),
+                lavalink_status=_("Enabled")
+                if has_lavalink_cache
+                else _("Disabled"),
             )
         msg += (
             "\n---"
@@ -1196,7 +1226,7 @@ class AudioSetCommands(MixinMeta, metaclass=CompositeMetaClass):
             ctx,
             title=_("Setting Changed"),
             description=_("Song titles as status: {true_or_false}.").format(
-                true_or_false=_("Enabled") if not status else _("Disabled")
+                true_or_false=_("Disabled") if status else _("Enabled")
             ),
         )
 
@@ -1211,7 +1241,7 @@ class AudioSetCommands(MixinMeta, metaclass=CompositeMetaClass):
             ctx,
             title=_("Setting Changed"),
             description=_("Thumbnail display: {true_or_false}.").format(
-                true_or_false=_("Enabled") if not thumbnail else _("Disabled")
+                true_or_false=_("Disabled") if thumbnail else _("Enabled")
             ),
         )
 
@@ -1355,10 +1385,16 @@ class AudioSetCommands(MixinMeta, metaclass=CompositeMetaClass):
                 + _("Youtube cache:    [{youtube_status}]\n")
                 + _("Lavalink cache:   [{lavalink_status}]\n")
             ).format(
-                max_age=str(await self.config.cache_age()) + " " + _("days"),
-                spotify_status=_("Enabled") if has_spotify_cache else _("Disabled"),
-                youtube_status=_("Enabled") if has_youtube_cache else _("Disabled"),
-                lavalink_status=_("Enabled") if has_lavalink_cache else _("Disabled"),
+                max_age=f"{str(await self.config.cache_age())} " + _("days"),
+                spotify_status=_("Enabled")
+                if has_spotify_cache
+                else _("Disabled"),
+                youtube_status=_("Enabled")
+                if has_youtube_cache
+                else _("Disabled"),
+                lavalink_status=_("Enabled")
+                if has_lavalink_cache
+                else _("Disabled"),
             )
             await self.send_embed_msg(
                 ctx, title=_("Cache Settings"), description=box(msg, lang="ini")
@@ -1373,17 +1409,17 @@ class AudioSetCommands(MixinMeta, metaclass=CompositeMetaClass):
             newcache = CacheLevel.all()
         elif level == 0:
             newcache = CacheLevel.none()
-        elif level in [-3, 3]:
+        elif level in {-3, 3}:
             if removing:
                 newcache = current_level - lavalink_cache
             else:
                 newcache = current_level + lavalink_cache
-        elif level in [-2, 2]:
+        elif level in {-2, 2}:
             if removing:
                 newcache = current_level - youtube_cache
             else:
                 newcache = current_level + youtube_cache
-        elif level in [-1, 1]:
+        elif level in {-1, 1}:
             if removing:
                 newcache = current_level - spotify_cache
             else:
@@ -1400,7 +1436,7 @@ class AudioSetCommands(MixinMeta, metaclass=CompositeMetaClass):
             + _("Youtube cache:    [{youtube_status}]\n")
             + _("Lavalink cache:   [{lavalink_status}]\n")
         ).format(
-            max_age=str(await self.config.cache_age()) + " " + _("days"),
+            max_age=f"{str(await self.config.cache_age())} " + _("days"),
             spotify_status=_("Enabled") if has_spotify_cache else _("Disabled"),
             youtube_status=_("Enabled") if has_youtube_cache else _("Disabled"),
             lavalink_status=_("Enabled") if has_lavalink_cache else _("Disabled"),
@@ -1445,7 +1481,7 @@ class AudioSetCommands(MixinMeta, metaclass=CompositeMetaClass):
             ctx,
             title=_("Setting Changed"),
             description=_("Persisting queues: {true_or_false}.").format(
-                true_or_false=_("Enabled") if not persist_cache else _("Disabled")
+                true_or_false=_("Disabled") if persist_cache else _("Enabled")
             ),
         )
 

@@ -146,7 +146,7 @@ class CommandObj:
         # Check against those pesky nitro users!
         if isinstance(response, str) and len(response) > 2000:
             raise ResponseTooLong()
-        elif isinstance(response, list) and any([len(i) > 2000 for i in response]):
+        elif isinstance(response, list) and any(len(i) > 2000 for i in response):
             raise ResponseTooLong()
         # test to raise
         ctx.cog.prepare_args(response if isinstance(response, str) else response[0])
@@ -325,15 +325,12 @@ class CustomCommands(commands.Cog):
         """
         cc_commands = await CommandObj.get_commands(self.config.guild(ctx.guild))
         extracted = process.extract(query, list(cc_commands.keys()))
-        accepted = []
-        for entry in extracted:
-            if entry[1] > 60:
-                # Match was decently strong
-                accepted.append((entry[0], cc_commands[entry[0]]))
-            else:
-                # Match wasn't strong enough
-                pass
-        if len(accepted) == 0:
+        accepted = [
+            (entry[0], cc_commands[entry[0]])
+            for entry in extracted
+            if entry[1] > 60
+        ]
+        if not accepted:
             return await ctx.send(_("No close matches were found."))
         results = self.prepare_command_list(ctx, accepted)
         if await ctx.embed_requested():
@@ -462,15 +459,14 @@ class CustomCommands(commands.Cog):
                 cooldowns = (await self.commandobj.get(ctx.message, command))[1]
             except NotFound:
                 return await ctx.send(_("That command doesn't exist."))
-            if cooldowns:
-                cooldown = []
-                for per, rate in cooldowns.items():
-                    cooldown.append(
-                        _("A {} may call this command every {} seconds").format(per, rate)
-                    )
-                return await ctx.send("\n".join(cooldown))
-            else:
+            if not cooldowns:
                 return await ctx.send(_("This command has no cooldown."))
+            cooldown = []
+            for per, rate in cooldowns.items():
+                cooldown.append(
+                    _("A {} may call this command every {} seconds").format(per, rate)
+                )
+            return await ctx.send("\n".join(cooldown))
         per = {"server": "guild", "user": "member"}.get(per, per)
         allowed = ("guild", "member", "channel")
         if per not in allowed:
@@ -618,16 +614,14 @@ class CustomCommands(commands.Cog):
             command_name=command_name, author=author, created_at=cmd["created_at"], type=_type
         )
 
-        cooldowns = cmd.get("cooldowns", {})
-
-        if cooldowns:
+        if cooldowns := cmd.get("cooldowns", {}):
             cooldown_text = _("Cooldowns:\n")
             for rate, per in cooldowns.items():
                 cooldown_text += _("{num} seconds per {period}\n").format(num=per, period=rate)
             text += cooldown_text
 
         text += _("Responses:\n")
-        responses = ["- " + r for r in responses]
+        responses = [f"- {r}" for r in responses]
         text += "\n".join(responses)
 
         for p in pagify(text):
@@ -661,9 +655,7 @@ class CustomCommands(commands.Cog):
             )
             if isinstance(raw_response, list):
                 raw_response = random.choice(raw_response)
-            elif isinstance(raw_response, str):
-                pass
-            else:
+            elif not isinstance(raw_response, str):
                 raise NotFound()
             if cooldowns:
                 self.test_cooldowns(ctx, ctx.invoked_with, cooldowns)
@@ -695,8 +687,9 @@ class CustomCommands(commands.Cog):
         for result in results:
             param = self.transform_parameter(result, ctx.message)
             raw_response = raw_response.replace("{" + result + "}", param)
-        results = re.findall(r"{((\d+)[^.}]*(\.[^:}]+)?[^}]*)\}", raw_response)
-        if results:
+        if results := re.findall(
+            r"{((\d+)[^.}]*(\.[^:}]+)?[^}]*)\}", raw_response
+        ):
             low = min(int(result[1]) for result in results)
             for result in results:
                 index = int(result[1]) - low
@@ -727,27 +720,29 @@ class CustomCommands(commands.Cog):
         high = max(indices)
         if high > 9:
             raise ArgParseError(_("Too many arguments!"))
-        gaps = set(indices).symmetric_difference(range(high + 1))
-        if gaps:
+        if gaps := set(indices).symmetric_difference(range(high + 1)):
             raise ArgParseError(
                 _("Arguments must be sequential. Missing arguments: ")
                 + ", ".join(str(i + low) for i in gaps)
             )
-        fin = [Parameter("_" + str(i), Parameter.POSITIONAL_OR_KEYWORD) for i in range(high + 1)]
+        fin = [
+            Parameter(f"_{str(i)}", Parameter.POSITIONAL_OR_KEYWORD)
+            for i in range(high + 1)
+        ]
         for arg in args:
             index = int(arg[0]) - low
             anno_raw = arg[1][1:]  # strip initial colon
             if anno_raw.lower().endswith("converter"):
                 anno_raw = anno_raw[:-9]
             if not anno_raw or anno_raw.startswith("_"):  # public types only
-                name = "{}_{}".format("text", index if index < high else "final")
+                name = f'text_{index if index < high else "final"}'
                 fin[index] = fin[index].replace(name=name)
                 continue
             # allow type hinting only for discord.py and builtin types
             try:
                 anno = getattr(discord, anno_raw)
                 # force an AttributeError if there's no discord.py converter
-                getattr(commands, anno.__name__ + "Converter")
+                getattr(commands, f"{anno.__name__}Converter")
             except AttributeError:
                 anno = allowed_builtins.get(anno_raw.lower(), Parameter.empty)
             if (
@@ -771,12 +766,9 @@ class CustomCommands(commands.Cog):
         # name the parameters for the help text
         for i, param in enumerate(fin):
             anno = param.annotation
-            name = "{}_{}".format(
-                "text" if anno is Parameter.empty else anno.__name__.lower(),
-                i if i < high else "final",
-            )
+            name = f'{"text" if anno is Parameter.empty else anno.__name__.lower()}_{i if i < high else "final"}'
             fin[i] = fin[i].replace(name=name)
-        return dict((p.name, p) for p in fin)
+        return {p.name: p for p in fin}
 
     def test_cooldowns(self, ctx, command, cooldowns):
         now = datetime.utcnow()
@@ -790,8 +782,7 @@ class CustomCommands(commands.Cog):
                 key = (command, ctx.guild, ctx.author)
             else:
                 raise ValueError(per)
-            cooldown = self.cooldowns.get(key)
-            if cooldown:
+            if cooldown := self.cooldowns.get(key):
                 cooldown += timedelta(seconds=rate)
                 if cooldown > now:
                     raise OnCooldown()
@@ -871,7 +862,7 @@ class CustomCommands(commands.Cog):
                 continue
             # Cut preview to 52 characters max
             if len(result) > 52:
-                result = result[:49] + "..."
+                result = f"{result[:49]}..."
             # Replace newlines with spaces
             result = result.replace("\n", " ")
             # Escape markdown and mass mentions

@@ -125,10 +125,7 @@ class LocalPath:
             self.path = self.localtrack_folder.joinpath(path) if path else self.localtrack_folder
 
         try:
-            if self.path.is_file():
-                parent = self.path.parent
-            else:
-                parent = self.path
+            parent = self.path.parent if self.path.is_file() else self.path
             self.parent = Path(parent)
         except OSError:
             self.parent = None
@@ -346,16 +343,16 @@ class Query:
         self.is_search: bool = kwargs.get("search", False)
         self.is_stream: bool = kwargs.get("stream", False)
         self.single_track: bool = kwargs.get("single", False)
-        self.id: Optional[str] = kwargs.get("id", None)
-        self.invoked_from: Optional[str] = kwargs.get("invoked_from", None)
-        self.local_name: Optional[str] = kwargs.get("name", None)
+        self.id: Optional[str] = kwargs.get("id")
+        self.invoked_from: Optional[str] = kwargs.get("invoked_from")
+        self.local_name: Optional[str] = kwargs.get("name")
         self.search_subfolders: bool = kwargs.get("search_subfolders", False)
-        self.spotify_uri: Optional[str] = kwargs.get("uri", None)
-        self.uri: Optional[str] = kwargs.get("url", None)
+        self.spotify_uri: Optional[str] = kwargs.get("uri")
+        self.uri: Optional[str] = kwargs.get("url")
         self.is_url: bool = kwargs.get("is_url", False)
 
         self.start_time: int = kwargs.get("start_time", 0)
-        self.track_index: Optional[int] = kwargs.get("track_index", None)
+        self.track_index: Optional[int] = kwargs.get("track_index")
         if self.invoked_from == "sc search":
             self.is_youtube = False
             self.is_soundcloud = True
@@ -440,8 +437,8 @@ class Query:
             possible_values["stream"] = query.is_stream
             query = query.uri
 
-        possible_values.update(dict(**kwargs))
-        possible_values.update(cls._parse(query, _local_folder_current_path, **kwargs))
+        possible_values |= dict(**kwargs)
+        possible_values |= cls._parse(query, _local_folder_current_path, **kwargs)
         return cls(query, _local_folder_current_path, **possible_values)
 
     @staticmethod

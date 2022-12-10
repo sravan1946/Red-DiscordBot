@@ -125,8 +125,8 @@ class QueueInterface:
                 self.database.cursor().execute,
                 PERSIST_QUEUE_UPSERT,
                 {
-                    "guild_id": int(guild_id),
-                    "room_id": int(room_id),
+                    "guild_id": guild_id,
+                    "room_id": room_id,
                     "played": False,
                     "time": enqueue_time,
                     "track": json.dumps(track),

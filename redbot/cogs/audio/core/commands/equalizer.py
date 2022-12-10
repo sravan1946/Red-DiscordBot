@@ -361,7 +361,10 @@ class EqualizerCommands(MixinMeta, metaclass=CompositeMetaClass):
         except ValueError:
             band_number = 1000
 
-        if band_number not in range(0, bands_num) and band_name_or_position not in band_names:
+        if (
+            band_number not in range(bands_num)
+            and band_name_or_position not in band_names
+        ):
             return await self.send_embed_msg(
                 ctx,
                 title=_("Invalid Band"),
@@ -374,8 +377,8 @@ class EqualizerCommands(MixinMeta, metaclass=CompositeMetaClass):
         if band_name_or_position in band_names:
             band_pos = band_names.index(band_name_or_position)
             band_int = False
-            eq.set_gain(int(band_pos), band_value)
-            await self._apply_gain(ctx.guild.id, int(band_pos), band_value)
+            eq.set_gain(band_pos, band_value)
+            await self._apply_gain(ctx.guild.id, band_pos, band_value)
         else:
             band_int = True
             eq.set_gain(band_number, band_value)

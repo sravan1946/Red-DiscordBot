@@ -267,9 +267,7 @@ class PlayerCommands(MixinMeta, metaclass=CompositeMetaClass):
             return await self.send_embed_msg(ctx, embed=embed)
         queue_dur = await self.track_remaining_duration(ctx)
         index = query.track_index
-        seek = 0
-        if query.start_time:
-            seek = query.start_time
+        seek = query.start_time or 0
         single_track = (
             tracks
             if isinstance(tracks, lavalink.rest_api.Track)
@@ -607,8 +605,7 @@ class PlayerCommands(MixinMeta, metaclass=CompositeMetaClass):
         try:
             await self.api_interface.autoplay(player, self.playlist_api)
         except DatabaseError:
-            notify_channel = player.fetch("notify_channel")
-            if notify_channel:
+            if notify_channel := player.fetch("notify_channel"):
                 notify_channel = ctx.guild.get_channel_or_thread(notify_channel)
                 await self.send_embed_msg(notify_channel, title=_("Couldn't get a valid track."))
             return
@@ -743,7 +740,7 @@ class PlayerCommands(MixinMeta, metaclass=CompositeMetaClass):
                     title=_("Unable To Play Tracks"),
                     description=_("That track is not allowed."),
                 )
-            if query.invoked_from == "search list" or query.invoked_from == "local folder":
+            if query.invoked_from in ["search list", "local folder"]:
                 if query.invoked_from == "search list" and not query.is_local:
                     try:
                         result, called_api = await self.api_interface.fetch_track(
@@ -861,11 +858,7 @@ class PlayerCommands(MixinMeta, metaclass=CompositeMetaClass):
                     )
                 )
                 if not guild_data["shuffle"] and queue_dur > 0:
-                    if query.is_local and query.is_album:
-                        footer = _("folder")
-                    else:
-                        footer = _("search")
-
+                    footer = _("folder") if query.is_local and query.is_album else _("search")
                     songembed.set_footer(
                         text=_(
                             "{time} until start of {type} playback: starts at #{position} in queue"

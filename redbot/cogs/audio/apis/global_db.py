@@ -81,9 +81,7 @@ class GlobalCacheWrapper:
                         r.status,
                         query,
                     )
-            if "tracks" not in search_response:
-                return {}
-            return search_response
+            return {} if "tracks" not in search_response else search_response
         except Exception as exc:
             log.trace("Failed to Get query: %s/%s", api_url, query, exc_info=exc)
         return {}
@@ -113,9 +111,7 @@ class GlobalCacheWrapper:
                         title,
                         author,
                     )
-            if "tracks" not in search_response:
-                return {}
-            return search_response
+            return {} if "tracks" not in search_response else search_response
         except Exception as exc:
             log.trace("Failed to Get query: %s", api_url, exc_info=exc)
         return {}

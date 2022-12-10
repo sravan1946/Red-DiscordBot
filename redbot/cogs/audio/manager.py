@@ -141,37 +141,27 @@ class LavalinkOldVersion:
     def __eq__(self, other: object) -> bool:
         if isinstance(other, LavalinkOldVersion):
             return self.build_number == other.build_number
-        if isinstance(other, LavalinkVersion):
-            return False
-        return NotImplemented
+        return False if isinstance(other, LavalinkVersion) else NotImplemented
 
     def __lt__(self, other: object) -> bool:
         if isinstance(other, LavalinkOldVersion):
             return self.build_number < other.build_number
-        if isinstance(other, LavalinkVersion):
-            return True
-        return NotImplemented
+        return True if isinstance(other, LavalinkVersion) else NotImplemented
 
     def __le__(self, other: object) -> bool:
         if isinstance(other, LavalinkOldVersion):
             return self.build_number <= other.build_number
-        if isinstance(other, LavalinkVersion):
-            return True
-        return NotImplemented
+        return True if isinstance(other, LavalinkVersion) else NotImplemented
 
     def __gt__(self, other: object) -> bool:
         if isinstance(other, LavalinkOldVersion):
             return self.build_number > other.build_number
-        if isinstance(other, LavalinkVersion):
-            return False
-        return NotImplemented
+        return False if isinstance(other, LavalinkVersion) else NotImplemented
 
     def __ge__(self, other: object) -> bool:
         if isinstance(other, LavalinkOldVersion):
             return self.build_number >= other.build_number
-        if isinstance(other, LavalinkVersion):
-            return False
-        return NotImplemented
+        return False if isinstance(other, LavalinkVersion) else NotImplemented
 
 
 class LavalinkVersion:
@@ -204,37 +194,27 @@ class LavalinkVersion:
     def __eq__(self, other: object) -> bool:
         if isinstance(other, LavalinkVersion):
             return self._get_comparison_tuple() == other._get_comparison_tuple()
-        if isinstance(other, LavalinkOldVersion):
-            return False
-        return NotImplemented
+        return False if isinstance(other, LavalinkOldVersion) else NotImplemented
 
     def __lt__(self, other: object) -> bool:
         if isinstance(other, LavalinkVersion):
             return self._get_comparison_tuple() < other._get_comparison_tuple()
-        if isinstance(other, LavalinkOldVersion):
-            return False
-        return NotImplemented
+        return False if isinstance(other, LavalinkOldVersion) else NotImplemented
 
     def __le__(self, other: object) -> bool:
         if isinstance(other, LavalinkVersion):
             return self._get_comparison_tuple() <= other._get_comparison_tuple()
-        if isinstance(other, LavalinkOldVersion):
-            return False
-        return NotImplemented
+        return False if isinstance(other, LavalinkOldVersion) else NotImplemented
 
     def __gt__(self, other: object) -> bool:
         if isinstance(other, LavalinkVersion):
             return self._get_comparison_tuple() > other._get_comparison_tuple()
-        if isinstance(other, LavalinkOldVersion):
-            return True
-        return NotImplemented
+        return True if isinstance(other, LavalinkOldVersion) else NotImplemented
 
     def __ge__(self, other: object) -> bool:
         if isinstance(other, LavalinkVersion):
             return self._get_comparison_tuple() >= other._get_comparison_tuple()
-        if isinstance(other, LavalinkOldVersion):
-            return True
-        return NotImplemented
+        return True if isinstance(other, LavalinkOldVersion) else NotImplemented
 
 
 class ServerManager:
@@ -380,8 +360,9 @@ class ServerManager:
         ]
         meta = 0, None
         invalid = None
-        if match and (
-            (int(match.group(1)) * 1024 ** (2 if match.group(2).lower() == "m" else 3))
+        if (
+            match
+            and int(match[1]) * 1024 ** (2 if match[2].lower() == "m" else 3)
             <= (meta := get_max_allocation_size(self._java_exc))[0]
         ):
             command_args.append(f"-Xmx{java_xmx}")

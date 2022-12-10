@@ -105,7 +105,7 @@ def standardize_scope(scope: str) -> str:
             f" Scope needs to be one of the following: {humanize_list(valid_scopes)}"
         )
 
-    if scope in ["GLOBAL", "BOT"]:
+    if scope in {"GLOBAL", "BOT"}:
         scope = PlaylistScope.GLOBAL.value
     elif scope in ["GUILD", "SERVER"]:
         scope = PlaylistScope.GUILD.value
@@ -124,16 +124,15 @@ def prepare_config_scope(
     """Return the scope used by Playlists."""
     scope = standardize_scope(scope)
     if scope == PlaylistScope.GLOBAL.value:
-        config_scope = [PlaylistScope.GLOBAL.value, bot.user.id]
+        return [PlaylistScope.GLOBAL.value, bot.user.id]
     elif scope == PlaylistScope.USER.value:
         if author is None:
             raise MissingAuthor("Invalid author for user scope.")
-        config_scope = [PlaylistScope.USER.value, int(getattr(author, "id", author))]
+        return [PlaylistScope.USER.value, int(getattr(author, "id", author))]
     else:
         if guild is None:
             raise MissingGuild("Invalid guild for guild scope.")
-        config_scope = [PlaylistScope.GUILD.value, int(getattr(guild, "id", guild))]
-    return config_scope
+        return [PlaylistScope.GUILD.value, int(getattr(guild, "id", guild))]
 
 
 def prepare_config_scope_for_migration23(  # TODO: remove me in a future version ?
@@ -143,16 +142,15 @@ def prepare_config_scope_for_migration23(  # TODO: remove me in a future version
     scope = standardize_scope(scope)
 
     if scope == PlaylistScope.GLOBAL.value:
-        config_scope = [PlaylistScope.GLOBAL.value]
+        return [PlaylistScope.GLOBAL.value]
     elif scope == PlaylistScope.USER.value:
         if author is None:
             raise MissingAuthor("Invalid author for user scope.")
-        config_scope = [PlaylistScope.USER.value, str(getattr(author, "id", author))]
+        return [PlaylistScope.USER.value, str(getattr(author, "id", author))]
     else:
         if guild is None:
             raise MissingGuild("Invalid guild for guild scope.")
-        config_scope = [PlaylistScope.GUILD.value, str(getattr(guild, "id", guild))]
-    return config_scope
+        return [PlaylistScope.GUILD.value, str(getattr(guild, "id", guild))]
 
 
 FakePlaylist = namedtuple("Playlist", "author scope")

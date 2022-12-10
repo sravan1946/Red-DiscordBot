@@ -27,7 +27,7 @@ from redbot.core.data_manager import load_existing_config
 if sys.platform == "linux":
     import distro  # pylint: disable=import-error
 
-INTERACTIVE_MODE = not len(sys.argv) > 1  # CLI flags = non-interactive
+INTERACTIVE_MODE = len(sys.argv) <= 1
 
 INTRO = "==========================\nRed Discord Bot - Launcher\n==========================\n"
 
@@ -68,12 +68,12 @@ def parse_cli_args():
 def run_red(selected_instance, autorestart: bool = False, cliflags=None):
     interpreter = sys.executable
     while True:
-        print("Starting {}...".format(selected_instance))
+        print(f"Starting {selected_instance}...")
         cmd_list = [interpreter, "-m", "redbot", selected_instance]
         if cliflags:
             cmd_list += cliflags
         status = subprocess.call(cmd_list)
-        if (not autorestart) or (autorestart and status != 26):
+        if not autorestart or status != 26:
             break
 
 
@@ -87,7 +87,7 @@ def instance_menu():
 
     name_num_map = {}
     for name in list(instances.keys()):
-        print("{}. {}\n".format(counter + 1, name))
+        print(f"{counter + 1}. {name}\n")
         name_num_map[str(counter + 1)] = name
         counter += 1
 
@@ -126,7 +126,7 @@ def main_menu(flags_to_pass):
     clear_screen()
     while True:
         print(INTRO)
-        print("\033[4mCurrent version:\033[0m {}".format(__version__))
+        print(f"\033[4mCurrent version:\033[0m {__version__}")
         print("WARNING: The launcher is scheduled for removal at a later date.")
         print("")
         print("1. Run Red w/ autorestart in case of issues")
@@ -134,13 +134,11 @@ def main_menu(flags_to_pass):
         print("0. Exit")
         choice = user_choice()
         if choice == "1":
-            instance = instance_menu()
-            if instance:
+            if instance := instance_menu():
                 run_red(instance, autorestart=True, cliflags=flags_to_pass)
             wait()
         elif choice == "2":
-            instance = instance_menu()
-            if instance:
+            if instance := instance_menu():
                 run_red(instance, autorestart=False, cliflags=flags_to_pass)
             wait()
         elif choice == "0":

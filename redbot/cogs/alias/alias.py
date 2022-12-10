@@ -160,21 +160,19 @@ class Alias(commands.Cog):
         command = trackform.format(alias.command, *args)
 
         # noinspection PyDunderSlots
-        new_message.content = "{}{} {}".format(
-            prefix, command, " ".join(args[trackform.max + 1 :])
-        ).strip()
+        new_message.content = (
+            f'{prefix}{command} {" ".join(args[trackform.max + 1:])}'.strip()
+        )
         await self.bot.process_commands(new_message)
 
     async def paginate_alias_list(
         self, ctx: commands.Context, alias_list: List[AliasEntry]
     ) -> None:
-        names = sorted(["+ " + a.name for a in alias_list])
+        names = sorted([f"+ {a.name}" for a in alias_list])
         message = "\n".join(names)
         temp = list(pagify(message, delims=["\n"], page_length=1850))
         alias_list = []
-        count = 0
-        for page in temp:
-            count += 1
+        for count, page in enumerate(temp, start=1):
             page = page.lstrip("\n")
             page = (
                 _("Aliases:\n")
@@ -202,9 +200,7 @@ class Alias(commands.Cog):
     @commands.guild_only()
     async def _add_alias(self, ctx: commands.Context, alias_name: str, *, command):
         """Add an alias for a command."""
-        # region Alias Add Validity Checking
-        is_command = self.is_command(alias_name)
-        if is_command:
+        if is_command := self.is_command(alias_name):
             await ctx.send(
                 _(
                     "You attempted to create a new alias"
@@ -261,9 +257,7 @@ class Alias(commands.Cog):
     @global_.command(name="add")
     async def _add_global_alias(self, ctx: commands.Context, alias_name: str, *, command):
         """Add a global alias for a command."""
-        # region Alias Add Validity Checking
-        is_command = self.is_command(alias_name)
-        if is_command:
+        if is_command := self.is_command(alias_name):
             await ctx.send(
                 _(
                     "You attempted to create a new global alias"
@@ -459,9 +453,10 @@ class Alias(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_without_command(self, message: discord.Message):
-        if message.guild is not None:
-            if await self.bot.cog_disabled_in_guild(self, message.guild):
-                return
+        if message.guild is not None and await self.bot.cog_disabled_in_guild(
+            self, message.guild
+        ):
+            return
 
         try:
             prefix = await self.get_prefix(message)

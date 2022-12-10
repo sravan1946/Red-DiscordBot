@@ -116,9 +116,7 @@ def change_dict_naming_convention(data) -> dict:
         if isinstance(v, dict):
             new_v = change_dict_naming_convention(v)
         elif isinstance(v, list):
-            new_v = list()
-            for x in v:
-                new_v.append(change_dict_naming_convention(x))
+            new_v = [change_dict_naming_convention(x) for x in v]
         new[convert_function(k)] = new_v
     return new
 
@@ -278,7 +276,7 @@ class Notifier:
 
         Based on the message found in :variable:`Notifier.updates` as per the `key` param
         """
-        if self.last_msg_time + self.cooldown > time.time() and not current == total:
+        if self.last_msg_time + self.cooldown > time.time() and current != total:
             return
         if self.color is None:
             self.color = await self.context.embed_colour()
@@ -288,25 +286,19 @@ class Notifier:
         )
         if seconds and seconds_key:
             embed2.set_footer(text=self.updates.get(seconds_key, "").format(seconds=seconds))
-        try:
+        with contextlib.suppress(discord.errors.NotFound):
             await self.message.edit(embed=embed2)
             self.last_msg_time = int(time.time())
-        except discord.errors.NotFound:
-            pass
 
     async def update_text(self, text: str):
         embed2 = discord.Embed(colour=self.color, title=text)
-        try:
+        with contextlib.suppress(discord.errors.NotFound):
             await self.message.edit(embed=embed2)
-        except discord.errors.NotFound:
-            pass
 
     async def update_embed(self, embed: discord.Embed):
-        try:
+        with contextlib.suppress(discord.errors.NotFound):
             await self.message.edit(embed=embed)
             self.last_msg_time = int(time.time())
-        except discord.errors.NotFound:
-            pass
 
 
 @unique

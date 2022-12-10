@@ -476,14 +476,17 @@ class Filter(commands.Cog):
         next_reset_time = member_data["next_reset_time"]
         created_at = message.created_at
 
-        if filter_count > 0 and filter_time > 0:
-            if created_at.timestamp() >= next_reset_time:
-                next_reset_time = created_at.timestamp() + filter_time
-                async with self.config.member(author).all() as member_data:
-                    member_data["next_reset_time"] = next_reset_time
-                    if user_count > 0:
-                        user_count = 0
-                        member_data["filter_count"] = user_count
+        if (
+            filter_count > 0
+            and filter_time > 0
+            and created_at.timestamp() >= next_reset_time
+        ):
+            next_reset_time = created_at.timestamp() + filter_time
+            async with self.config.member(author).all() as member_data:
+                member_data["next_reset_time"] = next_reset_time
+                if user_count > 0:
+                    user_count = 0
+                    member_data["filter_count"] = user_count
 
         hits = await self.filter_hits(message.content, message.channel)
 

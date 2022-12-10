@@ -136,6 +136,8 @@ class LocalTrackCommands(MixinMeta, metaclass=CompositeMetaClass):
             return await self.send_embed_msg(ctx, title=_("No album folders found."))
         async with ctx.typing():
             search_list = await self._build_local_search_list(all_tracks, search_words)
-        if not search_list:
-            return await self.send_embed_msg(ctx, title=_("No matches."))
-        return await ctx.invoke(self.command_search, query=search_list)
+        return (
+            await ctx.invoke(self.command_search, query=search_list)
+            if search_list
+            else await self.send_embed_msg(ctx, title=_("No matches."))
+        )

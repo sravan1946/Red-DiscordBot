@@ -26,10 +26,8 @@ class EqualizerUtilities(MixinMeta, metaclass=CompositeMetaClass):
             "bands": [{"band": band, "gain": gain}],
         }
 
-        try:
+        with contextlib.suppress(NodeNotFound, PlayerNotFound):
             await lavalink.get_player(guild_id).node.send({**const})
-        except (NodeNotFound, PlayerNotFound):
-            pass
 
     async def _apply_gains(self, guild_id: int, gains: List[float]) -> None:
         const = {
@@ -38,10 +36,8 @@ class EqualizerUtilities(MixinMeta, metaclass=CompositeMetaClass):
             "bands": [{"band": x, "gain": y} for x, y in enumerate(gains)],
         }
 
-        try:
+        with contextlib.suppress(NodeNotFound, PlayerNotFound):
             await lavalink.get_player(guild_id).node.send({**const})
-        except (NodeNotFound, PlayerNotFound):
-            pass
 
     async def _eq_check(self, ctx: commands.Context, player: lavalink.Player) -> None:
         eq = player.fetch("eq", Equalizer())
@@ -52,11 +48,9 @@ class EqualizerUtilities(MixinMeta, metaclass=CompositeMetaClass):
             await self.config.custom("EQUALIZER", ctx.guild.id).eq_bands.set(eq.bands)
 
         if eq.bands != config_bands:
-            band_num = list(range(0, eq.band_count))
+            band_num = list(range(eq.band_count))
             band_value = config_bands
-            eq_dict = {}
-            for k, v in zip(band_num, band_value):
-                eq_dict[k] = v
+            eq_dict = dict(zip(band_num, band_value))
             for band, value in eq_dict.items():
                 eq.set_gain(band, value)
             player.store("eq", eq)

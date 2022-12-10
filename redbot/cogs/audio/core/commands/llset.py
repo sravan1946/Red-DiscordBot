@@ -107,8 +107,8 @@ class LavalinkSetupCommands(MixinMeta, metaclass=CompositeMetaClass):
             if not match:
                 await ctx.send(_("Heap-size must be a valid measure of size, e.g. 256M, 256G"))
                 return 0
-            input_in_bytes = int(match.group(1)) * 1024 ** (
-                2 if match.group(2).lower() == "m" else 3
+            input_in_bytes = int(match[1]) * (
+                1024 ** (2 if match[2].lower() == "m" else 3)
             )
             if input_in_bytes < 64 * 1024**2:
                 await ctx.send(
@@ -164,8 +164,12 @@ class LavalinkSetupCommands(MixinMeta, metaclass=CompositeMetaClass):
             if external:
                 embed = discord.Embed(
                     title=_("Setting Changed"),
-                    description=_("External Lavalink server: {true_or_false}.").format(
-                        true_or_false=inline(_("Enabled") if not external else _("Disabled"))
+                    description=_(
+                        "External Lavalink server: {true_or_false}."
+                    ).format(
+                        true_or_false=inline(
+                            _("Disabled") if external else _("Enabled")
+                        )
                     ),
                 )
                 await self.send_embed_msg(ctx, embed=embed)
@@ -173,8 +177,12 @@ class LavalinkSetupCommands(MixinMeta, metaclass=CompositeMetaClass):
                 await self.send_embed_msg(
                     ctx,
                     title=_("Setting Changed"),
-                    description=_("External Lavalink server: {true_or_false}.").format(
-                        true_or_false=inline(_("Enabled") if not external else _("Disabled"))
+                    description=_(
+                        "External Lavalink server: {true_or_false}."
+                    ).format(
+                        true_or_false=inline(
+                            _("Disabled") if external else _("Enabled")
+                        )
                     ),
                 )
             try:
@@ -220,7 +228,7 @@ class LavalinkSetupCommands(MixinMeta, metaclass=CompositeMetaClass):
         This command sets the connection password which Audio will use to connect to an external Lavalink node.
         """
 
-        await self.config.password.set(str(password))
+        await self.config.password.set(password)
         await self.send_embed_msg(
             ctx,
             title=_("Setting Changed"),
@@ -343,7 +351,7 @@ class LavalinkSetupCommands(MixinMeta, metaclass=CompositeMetaClass):
         to_write.write(playlist_data)
         to_write.seek(0)
         datapath = cog_data_path(raw_name="Audio")
-        temp_file = datapath / f"application.dump.yaml"
+        temp_file = datapath / "application.dump.yaml"
         try:
             with temp_file.open("wb") as application_file:
                 application_file.write(to_write.read())
@@ -425,7 +433,7 @@ class LavalinkSetupCommands(MixinMeta, metaclass=CompositeMetaClass):
 
         The value by default is `2333`.
         """
-        if 1024 > port or port > 49151:
+        if port < 1024 or port > 49151:
             return await self.send_embed_msg(
                 ctx,
                 title=_("Setting Not Changed"),

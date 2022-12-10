@@ -131,8 +131,7 @@ class SpotifyWrapper:
         await self.get_token()
         payload = {"grant_type": "client_credentials"}
         headers = self.make_auth_header(self.client_id, self.client_secret)
-        r = await self.post(TOKEN_ENDPOINT, payload=payload, headers=headers)
-        return r
+        return await self.post(TOKEN_ENDPOINT, payload=payload, headers=headers)
 
     async def get_access_token(self) -> Optional[str]:
         """Get the access_token."""

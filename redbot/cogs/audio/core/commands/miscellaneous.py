@@ -68,9 +68,7 @@ class MiscellaneousCommands(MixinMeta, metaclass=CompositeMetaClass):
                 )
                 msg += f"{p.guild.name} [`{connect_dur}`]: {current_title}\n"
             except AttributeError:
-                msg += "{} [`{}`]: **{}**\n".format(
-                    p.guild.name, connect_dur, _("Nothing playing.")
-                )
+                msg += f'{p.guild.name} [`{connect_dur}`]: **{_("Nothing playing.")}**\n'
 
         if total_num == 0:
             return await self.send_embed_msg(ctx, title=_("Not connected anywhere."))

@@ -141,7 +141,7 @@ class General(commands.Cog):
             tran = "∀qƆpƎℲפHIſʞ˥WNOԀQᴚS┴∩ΛMX⅄Z"
             table = str.maketrans(char, tran)
             name = name.translate(table)
-            await ctx.send(msg + "(╯°□°）╯︵ " + name[::-1])
+            await ctx.send(f"{msg}(╯°□°）╯︵ {name[::-1]}")
         else:
             await ctx.send(_("*flips a coin and... ") + choice([_("HEADS!*"), _("TAILS!*")]))
 
@@ -197,7 +197,7 @@ class General(commands.Cog):
         Question must end with a question mark.
         """
         if question.endswith("?") and question != "?":
-            await ctx.send("`" + T_(choice(self.ball)) + "`")
+            await ctx.send(f"`{T_(choice(self.ball))}`")
         else:
             await ctx.send(_("That doesn't look like a question."))
 
@@ -220,7 +220,7 @@ class General(commands.Cog):
     async def lmgtfy(self, ctx, *, search_terms: str):
         """Create a lmgtfy link."""
         search_terms = escape(urllib.parse.quote_plus(search_terms), mass_mentions=True)
-        await ctx.send("https://lmgtfy.app/?q={}&s=g".format(search_terms))
+        await ctx.send(f"https://lmgtfy.app/?q={search_terms}&s=g")
 
     @commands.command(hidden=True)
     @commands.guild_only()
@@ -231,15 +231,15 @@ class General(commands.Cog):
         """
         name = italics(user.display_name)
         if intensity <= 0:
-            msg = "(っ˘̩╭╮˘̩)っ" + name
+            msg = f"(っ˘̩╭╮˘̩)っ{name}"
         elif intensity <= 3:
-            msg = "(っ´▽｀)っ" + name
+            msg = f"(っ´▽｀)っ{name}"
         elif intensity <= 6:
-            msg = "╰(*´︶`*)╯" + name
+            msg = f"╰(*´︶`*)╯{name}"
         elif intensity <= 9:
-            msg = "(つ≧▽≦)つ" + name
+            msg = f"(つ≧▽≦)つ{name}"
         elif intensity >= 10:
-            msg = "(づ￣ ³￣)づ{} ⊂(´・ω・｀⊂)".format(name)
+            msg = f"(づ￣ ³￣)づ{name} ⊂(´・ω・｀⊂)"
         else:
             # For the purposes of "msg might not be defined" linter errors
             raise RuntimeError
@@ -499,13 +499,13 @@ class General(commands.Cog):
                         word=ud["word"].capitalize(), author=ud["author"]
                     )
                     if len(title) > 256:
-                        title = "{}...".format(title[:253])
+                        title = f"{title[:253]}..."
                     embed.title = title
                     embed.url = ud["permalink"]
 
                     description = _("{definition}\n\n**Example:** {example}").format(**ud)
                     if len(description) > 2048:
-                        description = "{}...".format(description[:2045])
+                        description = f"{description[:2045]}..."
                     embed.description = description
 
                     embed.set_footer(
@@ -515,7 +515,7 @@ class General(commands.Cog):
                     )
                     embeds.append(embed)
 
-                if embeds is not None and len(embeds) > 0:
+                if embeds is not None and embeds:
                     await menu(
                         ctx,
                         pages=embeds,
@@ -539,12 +539,12 @@ class General(commands.Cog):
 
                     description = _("{definition}\n\n**Example:** {example}").format(**ud)
                     if len(description) > max_desc_len:
-                        description = "{}...".format(description[: max_desc_len - 3])
+                        description = f"{description[:max_desc_len - 3]}..."
 
                     message = message.format(description=description)
                     messages.append(message)
 
-                if messages is not None and len(messages) > 0:
+                if messages is not None and messages:
                     await menu(
                         ctx,
                         pages=messages,

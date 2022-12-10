@@ -29,14 +29,11 @@ conversion_log = logging.getLogger("red.converter")
 try:
     config_dir.mkdir(parents=True, exist_ok=True)
 except PermissionError:
-    print("You don't have permission to write to '{}'\nExiting...".format(config_dir))
+    print(f"You don't have permission to write to '{config_dir}'\nExiting...")
     sys.exit(1)
 
 instance_data = data_manager.load_existing_config()
-if instance_data is None:
-    instance_list = []
-else:
-    instance_list = list(instance_data.keys())
+instance_list = [] if instance_data is None else list(instance_data.keys())
 
 
 def save_config(name, data, remove=False):
@@ -63,7 +60,7 @@ def get_data_dir(*, instance_name: str, data_path: Optional[Path], interactive: 
         " otherwise input your desired data location."
     )
     print()
-    print("Default: {}".format(data_path))
+    print(f"Default: {data_path}")
 
     data_path_input = input("> ")
 
@@ -90,7 +87,7 @@ def get_data_dir(*, instance_name: str, data_path: Optional[Path], interactive: 
             )
             sys.exit(1)
 
-    print("You have chosen {} to be your data directory.".format(data_path))
+    print(f"You have chosen {data_path} to be your data directory.")
     if not click.confirm("Please confirm", default=True):
         print("Please start the process over.")
         sys.exit(0)
@@ -146,7 +143,7 @@ def get_name(name: str) -> str:
             sys.exit(1)
         return name
 
-    while len(name) == 0:
+    while not name:
         print(
             "Please enter a name for your instance,"
             " it will be used to run your bot from here on out.\n"
@@ -304,13 +301,13 @@ async def remove_instance(
     data_manager.load_basic_configuration(instance)
     backend = get_current_backend(instance)
 
-    if interactive is True and delete_data is None:
+    if interactive and delete_data is None:
         msg = "Would you like to delete this instance's data?"
         if backend != BackendType.JSON:
             msg += " The database server must be running for this to work."
         delete_data = click.confirm(msg, default=False)
 
-    if interactive is True and _create_backup is None:
+    if interactive and _create_backup is None:
         msg = "Would you like to make a backup of the data for this instance?"
         if backend != BackendType.JSON:
             msg += " The database server must be running for this to work."
@@ -327,7 +324,7 @@ async def remove_instance(
         finally:
             await driver_cls.teardown()
 
-    if interactive is True and remove_datapath is None:
+    if interactive and remove_datapath is None:
         remove_datapath = click.confirm(
             "Would you like to delete the instance's entire datapath?", default=False
         )
@@ -337,7 +334,7 @@ async def remove_instance(
         safe_delete(data_path)
 
     save_config(instance, {}, remove=True)
-    print("The instance {} has been removed.".format(instance))
+    print(f"The instance {instance} has been removed.")
 
 
 async def remove_instance_interaction() -> None:
@@ -350,7 +347,7 @@ async def remove_instance_interaction() -> None:
         "is a list of instances that currently exist:\n"
     )
     for instance in instance_data.keys():
-        print("{}\n".format(instance))
+        print(f"{instance}\n")
     print("Please select one of the above by entering its name")
     selected = input("> ")
 

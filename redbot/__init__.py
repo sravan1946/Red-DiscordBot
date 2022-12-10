@@ -101,9 +101,9 @@ class VersionInfo:
         if not match:
             raise ValueError(f"Invalid version string: {version_str}")
 
-        kwargs: _Dict[str, _Union[str, int]] = {}
-        for key in ("major", "minor", "micro"):
-            kwargs[key] = int(match[key])
+        kwargs: _Dict[str, _Union[str, int]] = {
+            key: int(match[key]) for key in ("major", "minor", "micro")
+        }
         releaselevel = match["releaselevel"]
         if releaselevel is not None:
             kwargs["releaselevel"] = cls._SHORT_RELEASE_LEVELS[releaselevel]
@@ -119,12 +119,7 @@ class VersionInfo:
     def from_json(
         cls, data: _Union[_Dict[str, _Union[int, str]], _List[_Union[int, str]]]
     ) -> "VersionInfo":
-        if isinstance(data, _List):
-            # For old versions, data was stored as a list:
-            # [MAJOR, MINOR, MICRO, RELEASELEVEL, SERIAL]
-            return cls(*data)
-        else:
-            return cls(**data)
+        return cls(*data) if isinstance(data, _List) else cls(**data)
 
     def to_json(self) -> _Dict[str, _Union[int, str]]:
         return {
@@ -145,22 +140,28 @@ class VersionInfo:
     ]:
         tups: _List[
             _Tuple[
-                int, int, int, int, _Union[int, float], _Union[int, float], _Union[int, float], int
+                int,
+                int,
+                int,
+                int,
+                _Union[int, float],
+                _Union[int, float],
+                _Union[int, float],
+                int,
             ]
-        ] = []
-        for obj in (self, other):
-            tups.append(
-                (
-                    obj.major,
-                    obj.minor,
-                    obj.micro,
-                    obj._RELEASE_LEVELS.index(obj.releaselevel),
-                    obj.serial if obj.serial is not None else _inf,
-                    obj.post_release if obj.post_release is not None else -_inf,
-                    obj.dev_release if obj.dev_release is not None else _inf,
-                    int(obj.dirty),
-                )
+        ] = [
+            (
+                obj.major,
+                obj.minor,
+                obj.micro,
+                obj._RELEASE_LEVELS.index(obj.releaselevel),
+                obj.serial if obj.serial is not None else _inf,
+                obj.post_release if obj.post_release is not None else -_inf,
+                obj.dev_release if obj.dev_release is not None else _inf,
+                int(obj.dirty),
             )
+            for obj in (self, other)
+        ]
         return tups
 
     def __lt__(self, other: "VersionInfo") -> bool:

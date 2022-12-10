@@ -55,15 +55,11 @@ class QueueUtilities(MixinMeta, metaclass=CompositeMetaClass):
         )
         if query.is_stream:
             queue_list += _("**Currently livestreaming:**\n")
-            queue_list += f"{current_track_description}\n"
-            queue_list += _("Requested by: **{user}**").format(user=player.current.requester)
-            queue_list += f"\n\n{arrow}`{pos}`/`{dur}`\n\n"
         else:
             queue_list += _("Playing: ")
-            queue_list += f"{current_track_description}\n"
-            queue_list += _("Requested by: **{user}**").format(user=player.current.requester)
-            queue_list += f"\n\n{arrow}`{pos}`/`{dur}`\n\n"
-
+        queue_list += f"{current_track_description}\n"
+        queue_list += _("Requested by: **{user}**").format(user=player.current.requester)
+        queue_list += f"\n\n{arrow}`{pos}`/`{dur}`\n\n"
         async for i, track in AsyncIter(queue[queue_idx_start:queue_idx_end]).enumerate(
             start=queue_idx_start
         ):
@@ -127,7 +123,7 @@ class QueueUtilities(MixinMeta, metaclass=CompositeMetaClass):
                 ):
                     track_title = query.local_track_path.to_string_user()
                 else:
-                    track_title = "{} - {}".format(track.author, track.title)
+                    track_title = f"{track.author} - {track.title}"
             else:
                 track_title = track.title
 
@@ -154,9 +150,9 @@ class QueueUtilities(MixinMeta, metaclass=CompositeMetaClass):
             track_idx = i + 1
             if type(track) is str:
                 track_location = LocalPath(track, self.local_folder_current_path).to_string_user()
-                track_match += "`{}.` **{}**\n".format(track_idx, track_location)
+                track_match += f"`{track_idx}.` **{track_location}**\n"
             else:
-                track_match += "`{}.` **{}**\n".format(track[0], track[1])
+                track_match += f"`{track[0]}.` **{track[1]}**\n"
         embed = discord.Embed(
             colour=await ctx.embed_colour(), title=_("Matching Tracks:"), description=track_match
         )
