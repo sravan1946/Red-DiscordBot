@@ -124,10 +124,7 @@ class Tunnel(metaclass=TunnelMeta):
         if content:
             for page in pagify(content):
                 rets.append(await destination.send(page, files=files, embed=embed))
-                if files:
-                    del files
-                if embed:
-                    del embed
+                files = embed = None
         elif embed or files:
             rets.append(await destination.send(files=files, embed=embed))
         return rets
@@ -178,7 +175,7 @@ class Tunnel(metaclass=TunnelMeta):
 
     async def close_because_disabled(self, close_message: str):
         """
-        Sends a mesage to both ends of the tunnel that the tunnel is now closed.
+        Sends a message to both ends of the tunnel that the tunnel is now closed.
 
         Parameters
         ----------

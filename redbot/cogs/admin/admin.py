@@ -6,6 +6,7 @@ import discord
 from redbot.core import Config, checks, commands
 from redbot.core.i18n import Translator, cog_i18n
 from redbot.core.utils.chat_formatting import box
+from redbot.core.utils.mod import get_audit_reason
 from redbot.core.utils.predicates import MessagePredicate
 
 from .announcer import Announcer
@@ -177,7 +178,8 @@ class Admin(commands.Cog):
             await ctx.send(_(NEED_MANAGE_ROLES))
             return
         try:
-            await member.add_roles(role)
+            reason = get_audit_reason(ctx.author)
+            await member.add_roles(role, reason=reason)
         except discord.Forbidden:
             await ctx.send(_(GENERIC_FORBIDDEN))
         else:
@@ -207,7 +209,8 @@ class Admin(commands.Cog):
             await ctx.send(_(NEED_MANAGE_ROLES))
             return
         try:
-            await member.remove_roles(role)
+            reason = get_audit_reason(ctx.author)
+            await member.remove_roles(role, reason=reason)
         except discord.Forbidden:
             await ctx.send(_(GENERIC_FORBIDDEN))
         else:
@@ -450,7 +453,7 @@ class Admin(commands.Cog):
         """Manage selfroles."""
         pass
 
-    @selfroleset.command(name="add")
+    @selfroleset.command(name="add", require_var_positional=True)
     async def selfroleset_add(self, ctx: commands.Context, *roles: discord.Role):
         """
         Add a role, or a selection of roles, to the list of available selfroles.
@@ -483,7 +486,7 @@ class Admin(commands.Cog):
 
         await ctx.send(message)
 
-    @selfroleset.command(name="remove")
+    @selfroleset.command(name="remove", require_var_positional=True)
     async def selfroleset_remove(self, ctx: commands.Context, *roles: SelfRole):
         """
         Remove a role, or a selection of roles, from the list of available selfroles.

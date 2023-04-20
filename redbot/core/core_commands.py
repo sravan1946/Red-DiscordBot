@@ -48,6 +48,7 @@ from .utils.chat_formatting import (
     humanize_timedelta,
     inline,
     pagify,
+    warning,
 )
 from .commands import CommandConverter, CogConverter
 from .commands.requires import PrivilegeLevel
@@ -394,8 +395,8 @@ class Core(commands.commands._RuleDropper, commands.Cog, CoreLogic):
         """
         embed_links = await ctx.embed_requested()
         author_repo = "https://github.com/Twentysix26"
-        org_repo = "https://github.com/Cog-Creators"
-        red_repo = org_repo + "/Red-DiscordBot"
+        red_repo = "https://github.com/Cog-Creators/Red-DiscordBot"
+        contributors_url = red_repo + "/graphs/contributors"
         red_pypi = "https://pypi.org/project/Red-DiscordBot"
         support_server_url = "https://discord.gg/red"
         dpy_repo = "https://github.com/Rapptz/discord.py"
@@ -425,7 +426,7 @@ class Core(commands.commands._RuleDropper, commands.Cog, CoreLogic):
                 "creates content for everyone to enjoy. [Join us today]({}) "
                 "and help us improve!\n\n"
                 "(c) Cog Creators"
-            ).format(red_repo, author_repo, org_repo, support_server_url)
+            ).format(red_repo, author_repo, contributors_url, support_server_url)
 
             embed = discord.Embed(color=(await ctx.embed_colour()))
             embed.add_field(
@@ -524,7 +525,13 @@ class Core(commands.commands._RuleDropper, commands.Cog, CoreLogic):
                 "6. <{}>\n"
                 "7. <{}>\n"
             ).format(
-                red_repo, author_repo, org_repo, support_server_url, python_url, dpy_repo, red_pypi
+                red_repo,
+                author_repo,
+                contributors_url,
+                support_server_url,
+                python_url,
+                dpy_repo,
+                red_pypi,
             )
             await ctx.send(refs)
 
@@ -1308,7 +1315,7 @@ class Core(commands.commands._RuleDropper, commands.Cog, CoreLogic):
         self, ctx: commands.GuildContext, command: CommandConverter, enabled: bool = None
     ):
         """
-        Sets a commmand's embed setting for the current server.
+        Sets a command's embed setting for the current server.
 
         If set, this is used instead of the server default to determine whether or not to use embeds.
 
@@ -1459,8 +1466,16 @@ class Core(commands.commands._RuleDropper, commands.Cog, CoreLogic):
         **Example:**
             - `[p]invite`
         """
+        message = await self.bot.get_invite_url()
+        if (admin := self.bot.get_cog("Admin")) and await admin.config.serverlocked():
+            message += "\n\n" + warning(
+                _(
+                    "This bot is currently **serverlocked**, meaning that it is locked "
+                    "to its current servers and will leave any server it joins."
+                )
+            )
         try:
-            await ctx.author.send(await self.bot.get_invite_url())
+            await ctx.author.send(message)
             await ctx.tick()
         except discord.errors.Forbidden:
             await ctx.send(
@@ -3514,7 +3529,7 @@ class Core(commands.commands._RuleDropper, commands.Cog, CoreLogic):
         description = _("Owner of {}").format(ctx.bot.user)
         content = _("You can reply to this message with {}contact").format(prefix)
         if await ctx.embed_requested():
-            e = discord.Embed(colour=discord.Colour.red(), description=message)
+            e = discord.Embed(colour=await ctx.embed_colour(), description=message)
 
             e.set_footer(text=content)
             if ctx.bot.user.avatar_url:

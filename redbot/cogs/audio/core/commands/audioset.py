@@ -464,7 +464,7 @@ class AudioSetCommands(MixinMeta, metaclass=CompositeMetaClass):
         """Set a playlist to auto-play songs from.
 
         **Usage**:
-        ​ ​ ​ ​ `[p]audioset autoplay playlist_name_OR_id [args]`
+        ​ ​ ​ ​ `[p]audioset autoplay playlist playlist_name_OR_id [args]`
 
         **Args**:
         ​ ​ ​ ​ The following are all optional:
@@ -487,9 +487,9 @@ class AudioSetCommands(MixinMeta, metaclass=CompositeMetaClass):
         ​ ​ ​ ​ Exact guild name
 
         Example use:
-        ​ ​ ​ ​ `[p]audioset autoplay MyGuildPlaylist`
-        ​ ​ ​ ​ `[p]audioset autoplay MyGlobalPlaylist --scope Global`
-        ​ ​ ​ ​ `[p]audioset autoplay PersonalPlaylist --scope User --author Draper`
+        ​ ​ ​ ​ `[p]audioset autoplay playlist MyGuildPlaylist`
+        ​ ​ ​ ​ `[p]audioset autoplay playlist MyGlobalPlaylist --scope Global`
+        ​ ​ ​ ​ `[p]audioset autoplay playlist PersonalPlaylist --scope User --author Draper`
         """
         if self.playlist_api is None:
             return await self.send_embed_msg(
@@ -1117,9 +1117,13 @@ class AudioSetCommands(MixinMeta, metaclass=CompositeMetaClass):
             if global_data["use_external_lavalink"]
             else _("Disabled"),
         )
-        if is_owner and not global_data["use_external_lavalink"] and self.player_manager.ll_build:
+        if (
+            is_owner
+            and not global_data["use_external_lavalink"]
+            and self.player_manager.ll_version
+        ):
             msg += _(
-                "Lavalink build:         [{llbuild}]\n"
+                "Lavalink version:       [{llversion}]\n"
                 "Lavalink branch:        [{llbranch}]\n"
                 "Release date:           [{build_time}]\n"
                 "Lavaplayer version:     [{lavaplayer}]\n"
@@ -1127,7 +1131,7 @@ class AudioSetCommands(MixinMeta, metaclass=CompositeMetaClass):
                 "Java Executable:        [{jv_exec}]\n"
             ).format(
                 build_time=self.player_manager.build_time,
-                llbuild=self.player_manager.ll_build,
+                llversion=self.player_manager.ll_version,
                 llbranch=self.player_manager.ll_branch,
                 lavaplayer=self.player_manager.lavaplayer,
                 jvm=self.player_manager.jvm,
