@@ -5,7 +5,6 @@
 import asyncio
 import contextlib
 import functools
-from types import MappingProxyType
 from typing import Callable, Dict, Iterable, List, Mapping, Optional, TypeVar, Union
 
 import discord
@@ -352,7 +351,7 @@ def start_adding_reactions(
 
 #: Default controls for `menu()` that contain controls for
 #: previous page, closing menu, and next page.
-DEFAULT_CONTROLS: Mapping[str, _ControlCallable] = MappingProxyType(
+DEFAULT_CONTROLS: Dict[str, _ControlCallable] = dict(
     {
         "\N{LEFTWARDS BLACK ARROW}\N{VARIATION SELECTOR-16}": prev_page,
         "\N{CROSS MARK}": close_menu,
