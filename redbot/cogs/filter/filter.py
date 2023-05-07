@@ -534,7 +534,9 @@ class Filter(commands.Cog):
             except discord.HTTPException:
                 pass
             else:
-                await message.channel.send(f"{author.mention} You can't say that!", delete_after=10)
+                await message.channel.send(
+                    f"{author.mention} You can't say that!", delete_after=10
+                )
                 self.bot.dispatch("filter_message_delete", message, hits)
                 if filter_count > 0 and filter_time > 0:
                     user_count += 1

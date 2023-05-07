@@ -272,6 +272,7 @@ async def prev_page(
         page = page - 1
     return await menu(ctx, pages, controls, message=message, page=page, timeout=timeout)
 
+
 async def first_page(
     ctx: commands.Context,
     pages: list,
@@ -284,6 +285,7 @@ async def first_page(
     page = 0
     return await menu(ctx, pages, controls, message=message, page=page, timeout=timeout)
 
+
 async def last_page(
     ctx: commands.Context,
     pages: list,
@@ -295,6 +297,7 @@ async def last_page(
 ):
     page = len(pages) - 1
     return await menu(ctx, pages, controls, message=message, page=page, timeout=timeout)
+
 
 async def close_menu(
     ctx: commands.Context,
