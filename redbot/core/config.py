@@ -8,6 +8,7 @@ from typing import (
     AsyncContextManager,
     Awaitable,
     Dict,
+    Generator,
     MutableMapping,
     Optional,
     Tuple,
@@ -95,7 +96,7 @@ class _ValueCtxManager(Awaitable[_T], AsyncContextManager[_T]):  # pylint: disab
         self.__acquire_lock = acquire_lock
         self.__lock = self.value_obj.get_lock()
 
-    def __await__(self) -> _T:
+    def __await__(self) -> Generator[Any, None, _T]:
         return self.coro.__await__()
 
     async def __aenter__(self) -> _T:
