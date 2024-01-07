@@ -13,10 +13,7 @@ from redbot.core import commands, Config, version_info as red_version_info
 from redbot.core.bot import Red
 from redbot.core.data_manager import cog_data_path
 from redbot.core.i18n import Translator, cog_i18n
-from redbot.core.utils import can_user_react_in
 from redbot.core.utils.chat_formatting import box, pagify, humanize_list, inline
-from redbot.core.utils.menus import start_adding_reactions
-from redbot.core.utils.predicates import MessagePredicate, ReactionPredicate
 
 from . import errors
 from .checks import do_install_agreement
@@ -1344,7 +1341,8 @@ class Downloader(commands.Cog):
 
         - `<repo>` The repo to list cogs from.
         """
-        sort_function = lambda x: x.name.lower()
+        def sort_function(x):
+            return x.name.lower()
         all_installed_cogs = await self.installed_cogs()
         installed_cogs_in_repo = [cog for cog in all_installed_cogs if cog.repo_name == repo.name]
         installed_str = "\n".join(
