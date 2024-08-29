@@ -230,8 +230,8 @@ async def create_backup(dest: Path = Path.home()) -> Optional[Path]:
         "__pycache__",
         "Lavalink.jar",
         os.path.join("Downloader", "lib"),
-        os.path.join("CogManager", "cogs"),
-        os.path.join("RepoManager", "repos"),
+        # os.path.join("CogManager", "cogs"),
+        # os.path.join("RepoManager", "repos"),
         os.path.join("Audio", "logs"),
     ]
 
